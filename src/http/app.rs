@@ -1,39 +1,31 @@
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
 
-use super::request::Request;
+
+
 
 pub struct App {
-	pub router: Arc<Mutex<HashMap<String, Arc<Mutex<dyn Fn(Request) -> String + Send + Sync + 'static>>>>>,
+    listener: tokio::net::TcpListener,
 }
 
 impl App {
-	pub fn new() -> App {
-		return App {
-			router: Arc::new(Mutex::new(HashMap::new())),
-		};
-	}
-
-    pub fn add_route<F>(&mut self, route: &str, callback: F)
-    where
-        F: Fn(Request) -> String + Send + Sync + 'static,
-    {
-        let mut router = self.router.lock().unwrap();
-        let thread_safe_callback = Arc::new(Mutex::new(callback));
-        router.insert(route.to_string(), thread_safe_callback);
-    }
-
-    pub fn get_handler(&self, route: &str) -> Option<Arc<Mutex<dyn Fn(Request) -> String + Send + Sync + 'static>>> {
-        let router = self.router.lock().unwrap();
-        let route = router.get(route);
-        match route {
-            Some(route) => {
-                return Some(route.clone());
-            }
-            None => {
-                return None;
-            }
+    
+    pub async fn new() -> App {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:8080");
+        match listener.await {
+            Ok(listener) => {
+                return App {
+                    listener: listener,
+                }
+            },
+            Err(e) => {
+                panic!("Error binding to address: {}", e);
+            },
+        
         }
     }
-	
+
+    pub async fn serve(&mut self) {
+        println!("Serving");
+    }
+
 }
+
