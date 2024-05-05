@@ -10,17 +10,20 @@ pub struct Request {
 	pub method: String,
 	pub path: String,
 	pub full_path: String,
+	pub path_and_method: String,
 }
 
 impl Request {
 	pub fn new(stream: &TcpStream) -> Request {
 		let raw = RawRequest::new(stream);
 		let (method, full_path, path_without_params) = raw.parse_method_and_path();
+		let path_and_method = format!("{} {}", method, path_without_params);
 		return Request { 
 			raw: raw,
 			method: method,
 			path: path_without_params,
 			full_path: full_path,
+			path_and_method: path_and_method,
 		};
 	}
 }
