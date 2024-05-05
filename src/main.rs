@@ -26,11 +26,13 @@ async fn main() {
                 },
                 Ok(Err(e)) => {
                     eprintln!("Error reading from socket: {}", e);
+                    socket.write_all(b"HTTP/1.1 500 Internal Server Error\r\n\r\n").await.unwrap();
                     let _ = socket.shutdown().await;
                     return
                 },
                 Err(_) => {
                     eprintln!("Connection timed out");
+                    socket.write_all(b"HTTP/1.1 408 Request Timeout\r\n\r\n").await.unwrap();
                     let _ = socket.shutdown().await;
                     return
                 },
@@ -45,11 +47,13 @@ async fn main() {
                 },
                 Ok(Err(e)) => {
                     eprintln!("Error writing to socket: {}", e);
+                    socket.write_all(b"HTTP/1.1 500 Internal Server Error\r\n\r\n").await.unwrap();
                     let _ = socket.shutdown().await;
                     return
                 },
                 Err(_) => {
                     eprintln!("Write timed out");
+                    socket.write_all(b"HTTP/1.1 408 Request Timeout\r\n\r\n").await.unwrap();
                     let _ = socket.shutdown().await;
                     return
                 },
