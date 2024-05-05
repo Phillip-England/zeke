@@ -27,9 +27,6 @@ app.add_route("GET /", |request| {
 let app = Arc::new(app);
 
 
-
-
-
 for stream in listener.incoming() {
 	let stream = stream.unwrap();
 	let app = app.clone();
@@ -43,26 +40,20 @@ for stream in listener.incoming() {
 fn handle_connection(mut stream: TcpStream, app: Arc<App>) -> () {
 
 	let request = Request::new(&stream);
-	let handler = app.get_handler(&request.path_and_method).unwrap().lock().unwrap()(request);
-
-
-	if request.path_and_method == "GET /" {
-		let response = http::response::hello_world();
-		stream.write(response.as_bytes()).unwrap();
-		return;
-	}
-
-	if request.path_and_method == "GET /sleep" {
-		thread::sleep(Duration::from_secs(5));
-		let response = http::response::hello_world();
-		stream.write(response.as_bytes()).unwrap();
-		return;
-	}
-
-	// not found
-	let response = http::response::not_found();
-	stream.write(response.as_bytes()).unwrap();
-	return;
+	let handler = app.get_handler(&request.path_and_method);
+    match handler {
+        Some(handler) => {
+            let handler = handler.lock().unwrap();
+            let response = handler(request);
+            stream.write(response.as_bytes()).unwrap();
+            return;
+        }
+        None => {
+            let response = http::response::not_found();
+            stream.write(response.as_bytes()).unwrap();
+            return;
+        }
+    }
 
  
 }
