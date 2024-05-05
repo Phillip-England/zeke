@@ -22,6 +22,19 @@ impl App {
 			let thread_safe_callback = Arc::new(Mutex::new(callback));
 			router.insert(route.to_string(), thread_safe_callback);
 		}
+
+		pub fn get_handler(&self, route: &str) -> Option<Arc<Mutex<dyn Fn(Request) -> String + Send + Sync + 'static>>> {
+			let router = self.router.lock().unwrap();
+			let route = router.get(route);
+			match route {
+				Some(route) => {
+					return Some(route.clone());
+				}
+				None => {
+					return None;
+				}
+			}
+		}
 	
     // pub fn route(&mut self, path: &str, handler: Box<dyn Fn(Request) -> String>) {
     //     self.router.insert(path.to_string(), handler);

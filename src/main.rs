@@ -43,6 +43,8 @@ for stream in listener.incoming() {
 fn handle_connection(mut stream: TcpStream, app: Arc<App>) -> () {
 
 	let request = Request::new(&stream);
+	let handler = app.get_handler(&request.path_and_method).unwrap().lock().unwrap()(request);
+
 
 	if request.path_and_method == "GET /" {
 		let response = http::response::hello_world();
