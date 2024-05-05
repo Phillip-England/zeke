@@ -1,3 +1,3 @@
 pub mod request;
 pub mod response;
-pub mod thread;
+pub mod pool;
