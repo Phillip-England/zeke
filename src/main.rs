@@ -1,4 +1,4 @@
-use std::{io::Write, net::{TcpListener, TcpStream}, thread, time::Duration};
+use std::{io::Write, net::{TcpListener, TcpStream}, sync::Arc, thread, time::Duration};
 
 mod http;
 
@@ -12,27 +12,35 @@ fn main() {
 
 	// binding to a port and getting a thread pool
 	// thread pool will ensure we can handle multiple requests at the same time
-    let listener = TcpListener::bind("127.0.0.1:8080").unwrap();
-	let pool = ThreadPool::new(4);
+let listener = TcpListener::bind("127.0.0.1:8080").unwrap();
+let pool = ThreadPool::new(4);
 
-	// setting up our app routes
-	let mut app = App::new();
+// initializing the app
+let mut app = App::new();
 
-	app.route("GET /", Box::new(|_request| {
-		return "HTTP/1.1 200 OK\r\n\r\nHello, World!".to_string();
-	}));
+// adding routes
+app.add_route("GET /", |request| {
+	return http::response::hello_world();
+});
 
-    for stream in listener.incoming() {
-        let stream = stream.unwrap();
-		pool.execute(move || {
-			handle_connection(stream);
-		})
-    }
+// wrapping app in arc
+let app = Arc::new(app);
 
+
+
+
+
+for stream in listener.incoming() {
+	let stream = stream.unwrap();
+	let app = app.clone();
+	pool.execute(move || {
+		handle_connection(stream, app);
+	})
+}
 
 }
 
-fn handle_connection(mut stream: TcpStream, app: App) -> () {
+fn handle_connection(mut stream: TcpStream, app: Arc<App>) -> () {
 
 	let request = Request::new(&stream);
 
