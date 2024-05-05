@@ -7,14 +7,21 @@ use std::{
 #[derive(Debug)]
 pub struct Request {
 	pub raw: RawRequest,
+	pub method: String,
+	pub path: String,
+	pub full_path: String,
 }
 
 impl Request {
 	pub fn new(stream: &TcpStream) -> Request {
 		let raw = RawRequest::new(stream);
+		let (method, full_path, path_without_params) = raw.parse_method_and_path();
 		return Request { 
-			raw: raw 
-		}
+			raw: raw,
+			method: method,
+			path: path_without_params,
+			full_path: full_path,
+		};
 	}
 }
 
@@ -24,6 +31,7 @@ pub struct RawRequest {
 	method_line_index: usize,
 	host_line_index: usize,
 	agent_line_index: usize,
+	accept_line_index: usize,
 }
 
 impl RawRequest {
@@ -34,6 +42,7 @@ impl RawRequest {
 			method_line_index: 0,
 			host_line_index: 1,
 			agent_line_index: 2,
+			accept_line_index: 3,
 		}
 
 	}
@@ -49,10 +58,24 @@ impl RawRequest {
 	pub fn method_line(&self) -> &str {
 		&self.lines[self.method_line_index]
 	}
+
+	/// Parses out the method and path from the method line.
+	/// Returns a tuple containing the method, full path (with query params), and the request without any params.
+	pub fn parse_method_and_path(&self) -> (String, String, String) {
+		let method_line = self.method_line();
+		let parts: Vec<&str> = method_line.split_whitespace().collect();
+		let method = parts[0].to_string();
+		let full_path = parts[1].to_string();
+		let path_without_params = full_path.split("?").collect::<Vec<&str>>()[0].to_string();
+		return (method, full_path, path_without_params);
+	}
 	pub fn host_line(&self) -> &str {
 		&self.lines[self.host_line_index]
 	}
 	pub fn agent_line(&self) -> &str {
 		&self.lines[self.agent_line_index]
+	}
+	pub fn accept_line(&self) -> &str {
+		&self.lines[self.accept_line_index]
 	}
 }

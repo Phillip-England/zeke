@@ -1,4 +1,4 @@
-use std::{io::Write, net::{TcpListener, TcpStream}};
+use std::{io::Write, net::{TcpListener, TcpStream}, thread, time::Duration};
 mod http;
 
 
@@ -20,13 +20,28 @@ fn main() {
 
 fn handle_connection(mut stream: TcpStream) {
     let request = http::request::Request::new(&stream);
-	println!("{:?}", request.raw.lines);
-	println!("{:?}", request.raw.method_line());
-	println!("{:?}", request.raw.host_line());
-	println!("{:?}", request.raw.agent_line());
+	println!("{:?}", request.method);
+	println!("{:?}", request.path);
+
+	if request.method == "GET" && request.path == "/" {
+		let response = http::response::hello_world();
+		stream.write(response.as_bytes()).unwrap();
+		return;
+	}
+
+	if request.method == "GET" && request.path == "/sleep" {
+		thread::sleep(Duration::from_secs(5));
+		let response = http::response::hello_world();
+		stream.write(response.as_bytes()).unwrap();
+		return;
+	}
+
+	// not found
+	let response = http::response::not_found();
+	stream.write(response.as_bytes()).unwrap();
+
 
 	// parsing the request
 
-    let response = http::response::hello_world();
-    stream.write(response.as_bytes()).unwrap();
+ 
 }
