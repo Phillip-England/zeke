@@ -1,59 +1,62 @@
-use std::{io::Write, net::{TcpListener, TcpStream}, sync::Arc, thread, time::Duration};
+use std::time::Duration;
 
-mod http;
-
-use http::app::App;
-use http::pool::ThreadPool;
-use http::request::Request;
+use tokio::net::TcpListener;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::time::timeout;
 
 
-fn main() {
 
 
-	// binding to a port and getting a thread pool
-	// thread pool will ensure we can handle multiple requests at the same time
-let listener = TcpListener::bind("127.0.0.1:8080").unwrap();
-let pool = ThreadPool::new(4);
+#[tokio::main]
+async fn main() {
+    let listener: TcpListener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
+    loop {
+        let (mut socket, _) = listener.accept().await.unwrap();
+        tokio::spawn(async move {
 
-// initializing the app
-let mut app = App::new();
+            println!("Incoming connection from: {}", socket.peer_addr().unwrap());
+            let mut buffer = [0; 1024];
+            
+            // handling connection timeouts
+            let connection_timeout: Result<Result<usize, std::io::Error>, tokio::time::error::Elapsed> = timeout(Duration::from_secs(5), socket.read(&mut buffer)).await;
+            match connection_timeout {
+                Ok(Ok(n)) => {
+                    let request_data: std::borrow::Cow<str> = String::from_utf8_lossy(&buffer[..n]);
+                    println!("Received data: {}", request_data);
+                },
+                Ok(Err(e)) => {
+                    eprintln!("Error reading from socket: {}", e);
+                    let _ = socket.shutdown().await;
+                    return
+                },
+                Err(_) => {
+                    eprintln!("Connection timed out");
+                    let _ = socket.shutdown().await;
+                    return
+                },
+            }
 
-// adding routes
-app.add_route("GET /", |request| {
-	return http::response::hello_world();
-});
+            // handling write timeouts
+            let response = "HTTP/1.1 200 OK\r\nContent-Length: 20\r\nContent-Type: text/html\r\n\r\n<h1>Hello World</h1>".as_bytes();
+            let write_timeout = timeout(Duration::from_secs(5), socket.write_all(response)).await;
+            match write_timeout {
+                Ok(Ok(_)) => {
+                    println!("Response sent");
+                },
+                Ok(Err(e)) => {
+                    eprintln!("Error writing to socket: {}", e);
+                    let _ = socket.shutdown().await;
+                    return
+                },
+                Err(_) => {
+                    eprintln!("Write timed out");
+                    let _ = socket.shutdown().await;
+                    return
+                },
+            }
 
-// wrapping app in arc
-let app = Arc::new(app);
 
 
-for stream in listener.incoming() {
-	let stream = stream.unwrap();
-	let app = app.clone();
-	pool.execute(move || {
-		handle_connection(stream, app);
-	})
-}
-
-}
-
-fn handle_connection(mut stream: TcpStream, app: Arc<App>) -> () {
-
-	let request = Request::new(&stream);
-	let handler = app.get_handler(&request.path_and_method);
-    match handler {
-        Some(handler) => {
-            let handler = handler.lock().unwrap();
-            let response = handler(request);
-            stream.write(response.as_bytes()).unwrap();
-            return;
-        }
-        None => {
-            let response = http::response::not_found();
-            stream.write(response.as_bytes()).unwrap();
-            return;
-        }
+        });
     }
-
- 
 }

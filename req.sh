@@ -1,6 +1,6 @@
 #!/bin/bash
 
-total_requests=100
+total_requests=1000
 concurrent_requests=10
 
 for ((i = 1; i <= total_requests; i += concurrent_requests))
@@ -14,3 +14,5 @@ do
     # Wait for all concurrent requests to finish before starting the next batch
     wait
 done
+
+
