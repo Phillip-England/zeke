@@ -22,7 +22,7 @@ async fn main() {
         }
     });
 
-    fn custom_mw() -> MiddlewareMutex {
+    fn simple_logger() -> MiddlewareMutex {
         return new_middleware(|request| {
             println!("{:?}", request.method_and_path);
             (request, None)
@@ -30,8 +30,8 @@ async fn main() {
     } 
         
 
-    add_route(&mut router, "GET /", Arc::clone(&handle_hello_world), vec![custom_mw()]);
-    add_route(&mut router, "GET /yo", Arc::clone(&handle_hello_world), vec![]);
+    add_route(&mut router, "GET /", Arc::clone(&handle_hello_world), vec![]);
+    add_route(&mut router, "GET /log", Arc::clone(&handle_hello_world), vec![simple_logger()]);
 
 
 
