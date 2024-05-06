@@ -1,36 +1,35 @@
 
 
-pub type RequestBuffer = Vec<u8>;
-
-pub fn new_request_buffer() -> RequestBuffer {
-    [0; 1024].to_vec()
-}
-
-pub fn usize_to_buffer(data: usize) -> RequestBuffer {
-    data.to_string().into_bytes()
-}
+pub type RequestBuffer = [u8; 1024];
 
 #[derive(Debug)]
 pub struct Request {
-    pub buffer: RequestBuffer,
     line_method: String,
 }
 
-pub fn new_request(buffer: RequestBuffer) -> Request {
+pub fn new_request(buffer: RequestBuffer) -> Option<Request> {
     let mut request = Request {
-        buffer: buffer,
         line_method: "".to_string(),
     };
-    let parsed_request = parse(request);
-    println!("{:?}", parsed_request);
-    return parsed_request;
+    let (parsed_request, failed) = parse(request, buffer);
+    if failed {
+        return None;
+    }
+    return Some(parsed_request);
 }
 
-pub fn parse(mut request: Request) -> Request {
-    let request_string = String::from_utf8_lossy(&request.buffer);
-    let request_parts: Vec<&str> = request_string.split(" ").collect();
-    for part in &request_parts {
-        println!("{}", part);
+pub fn parse(mut request: Request, buffer: RequestBuffer) -> (Request, bool) {
+    let request_string = String::from_utf8(buffer.to_vec());
+    match request_string {
+        Err(_) => {
+            return (request, true);
+        }
+        Ok(request_string) => {
+            let lines: Vec<&str> = request_string.lines().collect();
+            for line in lines {
+                println!("{}", line.to_string());
+            }
+            return (request, false);
+        }
     }
-    return request;
 }

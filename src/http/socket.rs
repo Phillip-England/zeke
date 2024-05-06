@@ -7,10 +7,8 @@ use crate::http::router::Router;
 use crate::http::response::to_bytes;
 use crate::http::response::get_response;
 use crate::http::request::RequestBuffer;
-use crate::http::request::new_request_buffer;
 use crate::http::request::new_request;
 
-use super::request::usize_to_buffer;
 
 
 
@@ -23,16 +21,16 @@ pub async fn connect(listener: &TcpListener, router: Arc<Router>) {
 }
 
 pub async fn read_socket(mut socket: TcpStream) -> (TcpStream, RequestBuffer) {
-	let mut buffer: RequestBuffer = new_request_buffer();
+	let mut buffer: [u8; 1024] = [0; 1024];
 	let read_timeout = timeout(Duration::from_secs(5), socket.read(&mut buffer)).await;
 	match read_timeout {
-		Ok(Ok(request_data)) => {
-			return (socket, usize_to_buffer(request_data));
+		Ok(Ok(bytes_read)) => {
+			return (socket, buffer);
 		},
 		// unable to read from socket
         Ok(Err(e)) => {
             socket.shutdown().await.unwrap();
-            return (socket, new_request_buffer());
+            return (socket, buffer);
         },
 		// read timed out
         Err(_) => {
@@ -42,10 +40,10 @@ pub async fn read_socket(mut socket: TcpStream) -> (TcpStream, RequestBuffer) {
             match write_result {
                 Ok(_) => {
                     socket.shutdown().await.unwrap();
-                    return (socket, new_request_buffer());
+                    return (socket, buffer);
                 },
                 Err(e) => {
-                    return (socket, new_request_buffer());
+                    return (socket, buffer);
                 },
             }
         },
