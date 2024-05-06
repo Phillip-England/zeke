@@ -13,8 +13,8 @@ use crate::http::response;
 use crate::http::router::Router;
 
 
-
-pub async fn serve(router: Arc<Router>, listener: Result<TcpListener, Error>) {
+pub async fn serve(router: Router, listener: Result<TcpListener, Error>) {
+    let router = Arc::new(router);
     match listener {
         Ok(ref listener) => {
             loop {
