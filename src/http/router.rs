@@ -7,7 +7,7 @@ pub type RouteHandler = (Handler, Middlewares);
 pub type RouteHandlerMutex = Arc<Mutex<RouteHandler>>;
 pub type Router = HashMap<&'static str, Arc<Mutex<RouteHandler>>>;
 
-pub type Middleware = Box<dyn Fn(Request) -> Option<Response> + Send + 'static>;
+pub type Middleware = Box<dyn Fn(Request) -> (Request, Option<Response>)  + Send + 'static>;
 
 pub type MiddlewareMutex = Arc<Mutex<Middleware>>;
 pub type Middlewares = Vec<MiddlewareMutex>;
@@ -35,16 +35,17 @@ where
 
 pub fn new_middleware<F>(f: F) -> MiddlewareMutex
 where
-	F: Fn(Request) -> Option<Response> + Send + 'static,
+	F: Fn(Request) -> (Request, Option<Response>) + Send + 'static,
 {
 	Arc::new(Mutex::new(Box::new(f)))
 }
 
 pub fn test_middleware() -> MiddlewareMutex {
 	new_middleware(|request: Request| {
-		Some(Response {
+		let response = Some(Response {
 			status: 200,
 			body: "Hello, Middleware!".to_string(),
-		})
+		});
+        return (request, response);
 	})
 }

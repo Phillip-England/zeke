@@ -16,7 +16,7 @@ pub async fn serve(router: Router, listener: Result<TcpListener, Error>) -> Opti
     match listener {
         Ok(ref listener) => {
             loop {
-                let router: Arc<Router> = Arc::clone(&router);
+                let router: Arc<Router> = Arc::clone(&router); // TODO: is cloning the router bad?
                 socket::connect(listener, router).await; 
             }
         },
