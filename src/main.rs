@@ -1,59 +1,29 @@
-use std::{io::Write, net::{TcpListener, TcpStream}, sync::Arc, thread, time::Duration};
+
 
 mod http;
 
-use http::app::App;
-use http::pool::ThreadPool;
-use http::request::Request;
+use std::sync::Arc;
+
+use http::app;
+use http::router::{self, test_middleware, Handler};
 
 
-fn main() {
+#[tokio::main]
+async fn main() {
 
 
-	// binding to a port and getting a thread pool
-	// thread pool will ensure we can handle multiple requests at the same time
-let listener = TcpListener::bind("127.0.0.1:8080").unwrap();
-let pool = ThreadPool::new(4);
+	let mut router: router::Router = router::new_router();
 
-// initializing the app
-let mut app = App::new();
-
-// adding routes
-app.add_route("GET /", |request| {
-	return http::response::hello_world();
-});
-
-// wrapping app in arc
-let app = Arc::new(app);
-
-
-for stream in listener.incoming() {
-	let stream = stream.unwrap();
-	let app = app.clone();
-	pool.execute(move || {
-		handle_connection(stream, app);
-	})
-}
-
-}
-
-fn handle_connection(mut stream: TcpStream, app: Arc<App>) -> () {
-
-	let request = Request::new(&stream);
-	let handler = app.get_handler(&request.path_and_method);
-    match handler {
-        Some(handler) => {
-            let handler = handler.lock().unwrap();
-            let response = handler(request);
-            stream.write(response.as_bytes()).unwrap();
-            return;
+    let handle_hello_world: Handler = router::new_handler(|request| {
+        http::response::Response {
+            status: 200,
+            body: "Hello, World!".to_string(),
         }
-        None => {
-            let response = http::response::not_found();
-            stream.write(response.as_bytes()).unwrap();
-            return;
-        }
-    }
+    });
 
- 
+    router::insert(&mut router, "GET /", handle_hello_world, vec![test_middleware()]);
+
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:8080").await;
+    app::serve(router, listener).await; 
 }

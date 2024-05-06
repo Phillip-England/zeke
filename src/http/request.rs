@@ -1,84 +1,97 @@
+use std::collections::HashMap;
 
-use std::{
-    io::{prelude::*, BufReader},
-    net::TcpStream,
-};
 
-#[derive(Debug)]
+
+pub type RequestBuffer = [u8; 1024];
+
+#[derive(Debug, Clone)]
 pub struct Request {
-	pub raw: RawRequest,
-	pub method: String,
-	pub path: String,
-	pub full_path: String,
-	pub path_and_method: String,
+    pub method_and_path: String,
+    pub method: String,
+    pub path: String,
+    pub protocol: String,
+    pub body: String,
+    pub headers: HashMap<String, String>,
 }
 
-impl Request {
-	pub fn new(stream: &TcpStream) -> Request {
-		let raw = RawRequest::new(stream);
-		let (method, full_path, path_without_params) = raw.parse_method_and_path();
-		let path_and_method = format!("{} {}", method, path_without_params);
-		return Request { 
-			raw: raw,
-			method: method,
-			path: path_without_params,
-			full_path: full_path,
-			path_and_method: path_and_method,
-		};
-	}
+pub fn new_request(buffer: RequestBuffer) -> Option<Request> {
+    let request = Request {
+        method_and_path: "".to_string(),
+        method: "".to_string(),
+        path: "".to_string(),
+        protocol: "".to_string(),
+        body: "".to_string(),
+        headers: HashMap::new(),
+    };
+    let (parsed_request, failed) = parse(request, buffer);
+    if failed {
+        return None;
+    }
+    return Some(parsed_request);
 }
 
-#[derive(Debug)]
-pub struct RawRequest {
-	pub lines: Vec<String>,
-	method_line_index: usize,
-	host_line_index: usize,
-	agent_line_index: usize,
-	accept_line_index: usize,
+/// TODO: Ensure that headers are parsed correctly. We need to test this.
+pub fn parse(mut request: Request, buffer: RequestBuffer) -> (Request, bool) {
+    let end = buffer.iter().position(|&x| x == 0).unwrap_or(buffer.len());
+    let request_string = String::from_utf8(buffer[..end].to_vec());
+    match request_string {
+        Err(_) => {
+            return (request, true);
+        }
+        Ok(request_string) => {
+            let lines: Vec<&str> = request_string.lines().collect();
+            for i in 0..lines.len() {
+                let line = lines[i];
+                // method, path, protocol
+                if i == 0 {
+                    let parts = line.split(" ").collect::<Vec<&str>>();
+                    if parts.len() != 3 {
+                        return (request, true);
+                    }
+                    let method = parts[0];
+                    let path = parts[1];
+                    let protocol = parts[2];
+                    request.method_and_path = format!("{} {}", method, path);
+                    request.method = method.to_string();
+                    request.path = path.to_string();
+                    request.protocol = protocol.to_string();
+                    continue
+                }
+                // request body
+                if i == lines.len() - 1 {
+                    request.body = line.to_string();
+                    continue
+                }
+                // headers
+                if (line.len() == 0) { // empty line
+                    continue
+                }
+                let trimmed_line = line.replace(" ", "");
+                let parts = trimmed_line.split(":").collect::<Vec<&str>>();
+                if parts.len() != 2 {
+                    continue
+                }
+                let key = parts[0];
+                let value = parts[1];
+                request.headers.insert(key.to_string(), value.to_string());
+
+            }
+            return (request, false);
+        }
+    }
 }
 
-impl RawRequest {
-	pub fn new(stream: &TcpStream) -> RawRequest {
-		let lines = RawRequest::stream_to_lines(stream);
-		RawRequest { 
-			lines: lines,
-			method_line_index: 0,
-			host_line_index: 1,
-			agent_line_index: 2,
-			accept_line_index: 3,
-		}
 
-	}
-	pub fn stream_to_lines(stream: &TcpStream) -> Vec<String> {
-		let buf_reader: BufReader<&TcpStream> = BufReader::new(&stream);
-		let http_request: Vec<_> = buf_reader
-			.lines()
-			.map(|result| result.unwrap())
-			.take_while(|line| !line.is_empty())
-			.collect();
-		http_request
-	}
-	pub fn method_line(&self) -> &str {
-		&self.lines[self.method_line_index]
-	}
-
-	/// Parses out the method and path from the method line.
-	/// Returns a tuple containing the method, full path (with query params), and the request without any params.
-	pub fn parse_method_and_path(&self) -> (String, String, String) {
-		let method_line = self.method_line();
-		let parts: Vec<&str> = method_line.split_whitespace().collect();
-		let method = parts[0].to_string();
-		let full_path = parts[1].to_string();
-		let path_without_params = full_path.split("?").collect::<Vec<&str>>()[0].to_string();
-		return (method, full_path, path_without_params);
-	}
-	pub fn host_line(&self) -> &str {
-		&self.lines[self.host_line_index]
-	}
-	pub fn agent_line(&self) -> &str {
-		&self.lines[self.agent_line_index]
-	}
-	pub fn accept_line(&self) -> &str {
-		&self.lines[self.accept_line_index]
-	}
+/// Get a header from a request.
+/// Returns an empty string if header does not exist
+pub fn get_header(request: Request, key: &str) -> (Request, String) {
+    let mut header = "".to_string();
+    match request.headers.get(key) {
+        Some(value) => {
+            header = value.to_string();
+        },
+        None => {
+        },
+    }
+    return (request, header);
 }

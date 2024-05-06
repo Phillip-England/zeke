@@ -1,9 +1,25 @@
 
 
-pub fn hello_world() -> String {
-    return "HTTP/1.1 200 OK\r\n\r\nHello, world!".to_string();
+#[derive(Debug)]
+pub struct Response {
+    pub status: u16,
+    pub body: String,
 }
 
-pub fn not_found() -> String {
-	return "HTTP/1.1 404 NOT FOUND\r\n\r\nNot Found".to_string();
+pub fn new_response(status: u16, body: String) -> Response {
+    Response {
+        status,
+        body,
+    }
+}
+
+pub fn to_bytes(response: Response) -> Vec<u8> {
+    format!("HTTP/1.1 {}\r\n\r\n{}", response.status, response.body).into_bytes()
+}
+
+pub fn not_found() -> Response {
+    Response {
+        status: 404,
+        body: "Not Found".to_string(),
+    }
 }

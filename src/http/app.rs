@@ -1,39 +1,27 @@
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
 
-use super::request::Request;
 
-pub struct App {
-	pub router: Arc<Mutex<HashMap<String, Arc<Mutex<dyn Fn(Request) -> String + Send + Sync + 'static>>>>>,
-}
 
-impl App {
-	pub fn new() -> App {
-		return App {
-			router: Arc::new(Mutex::new(HashMap::new())),
-		};
-	}
 
-    pub fn add_route<F>(&mut self, route: &str, callback: F)
-    where
-        F: Fn(Request) -> String + Send + Sync + 'static,
-    {
-        let mut router = self.router.lock().unwrap();
-        let thread_safe_callback = Arc::new(Mutex::new(callback));
-        router.insert(route.to_string(), thread_safe_callback);
-    }
+use std::io::Error;
+use tokio::net::TcpListener;
+use std::sync::Arc;
 
-    pub fn get_handler(&self, route: &str) -> Option<Arc<Mutex<dyn Fn(Request) -> String + Send + Sync + 'static>>> {
-        let router = self.router.lock().unwrap();
-        let route = router.get(route);
-        match route {
-            Some(route) => {
-                return Some(route.clone());
+use crate::http::socket;
+use crate::http::router::Router;
+
+
+
+pub async fn serve(router: Router, listener: Result<TcpListener, Error>) -> Option<Error> {
+    let router: Arc<Router> = Arc::new(router);
+    match listener {
+        Ok(ref listener) => {
+            loop {
+                let router: Arc<Router> = Arc::clone(&router); // TODO: is cloning the router bad?
+                socket::connect(listener, router).await; 
             }
-            None => {
-                return None;
-            }
-        }
+        },
+        Err(e) => {
+			return Some(e);
+        },
     }
-	
 }
