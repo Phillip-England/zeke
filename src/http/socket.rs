@@ -6,7 +6,8 @@ use crate::http::router::Router;
 use crate::http::response::to_bytes;
 use crate::http::response::get_response;
 use crate::http::request::RequestBuffer;
-use crate::http::request::get_request_buffer;
+use crate::http::request::new_request_buffer;
+use crate::http::request::new_request;
 
 use super::request::usize_to_buffer;
 
@@ -19,15 +20,16 @@ pub async fn connect(listener: TcpListener, router: Arc<Router>) {
         if request_bytes.len() == 0 {
             return
         }
+        let request = new_request(request_bytes);
         let route = router.get("/").unwrap();
-        let response = route.lock().unwrap()();
+        let response = route.lock().unwrap()(request);
         let response_bytes = to_bytes(response);
         let (mut socket, write_result) = write_socket(socket, &response_bytes).await;
 	});
 }
 
 pub async fn read_socket(mut socket: TcpStream) -> (TcpStream, RequestBuffer) {
-	let mut buffer: RequestBuffer = get_request_buffer();
+	let mut buffer: RequestBuffer = new_request_buffer();
 	let read_timeout = timeout(Duration::from_secs(5), socket.read(&mut buffer)).await;
 	match read_timeout {
 		Ok(Ok(request_data)) => {
@@ -36,7 +38,7 @@ pub async fn read_socket(mut socket: TcpStream) -> (TcpStream, RequestBuffer) {
 		// unable to read from socket
         Ok(Err(e)) => {
             socket.shutdown().await.unwrap();
-            return (socket, get_request_buffer());
+            return (socket, new_request_buffer());
         },
 		// read timed out
         Err(_) => {
@@ -46,10 +48,10 @@ pub async fn read_socket(mut socket: TcpStream) -> (TcpStream, RequestBuffer) {
             match write_result {
                 Ok(_) => {
                     socket.shutdown().await.unwrap();
-                    return (socket, get_request_buffer());
+                    return (socket, new_request_buffer());
                 },
                 Err(e) => {
-                    return (socket, get_request_buffer());
+                    return (socket, new_request_buffer());
                 },
             }
         },

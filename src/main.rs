@@ -13,12 +13,15 @@ async fn main() {
 
 	let mut router: router::Router = router::new_router();
 
-    router::insert(&mut router, "/", Box::new(|| {
+    let handle_hello_world = router::create_handler(|request| {
+        println!("Request: {:?}", request);
         http::response::Response {
             status: 200,
             body: "Hello, World!".to_string(),
         }
-	}));
+    });
+
+    router::insert(&mut router, "/", handle_hello_world);
 
 	let router = Arc::new(router);
 
