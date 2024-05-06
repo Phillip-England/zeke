@@ -41,9 +41,8 @@ pub async fn handle_connection(socket: TcpStream, router: Arc<Router>) {
         if request.is_none() {
             return
         }
-        let request = request.unwrap();
-        println!("{:?}", request);
-        let route = router.get("GET /");
+        let request = request.unwrap(); // TODO
+        let route = router.get(request.method_and_path.as_str());
         match route {
             Some(route) => {
                 handle_route(socket, route, request).await;

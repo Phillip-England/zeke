@@ -5,6 +5,7 @@ mod http;
 use std::sync::Arc;
 
 use http::app;
+use http::request::get_header;
 use http::router;
 
 
@@ -15,7 +16,8 @@ async fn main() {
 	let mut router: router::Router = router::new_router();
 
     let handle_hello_world = router::create_handler(|request| {
-        println!("Request: {:?}", request);
+        let (request, header) = get_header(request, "Content-Type");
+        println!("Content-Type: {}", header);
         http::response::Response {
             status: 200,
             body: "Hello, World!".to_string(),
