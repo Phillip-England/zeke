@@ -6,7 +6,7 @@ pub struct Response {
     pub body: String,
 }
 
-pub fn get_response(status: u16, body: String) -> Response {
+pub fn new_response(status: u16, body: String) -> Response {
     Response {
         status,
         body,

@@ -12,18 +12,20 @@ use crate::http::request;
 use crate::http::response;
 use crate::http::router::Router;
 
+use super::router::RouteHandler;
 
-pub async fn serve(router: Router, listener: Result<TcpListener, Error>) {
+
+pub async fn serve(router: Router, listener: Result<TcpListener, Error>) -> Option<Error> {
     let router = Arc::new(router);
     match listener {
         Ok(ref listener) => {
             loop {
-                let router: Arc<std::collections::HashMap<&str, Arc<Mutex<Box<dyn Fn(request::Request) -> response::Response + Send>>>>> = Arc::clone(&router);
+                let router: Arc<std::collections::HashMap<&str, RouteHandler>> = Arc::clone(&router);
                 socket::connect(listener, router).await;
             }
         },
         Err(e) => {
-            ("Error: {}", e);
+			return Some(e);
         },
     }
 }

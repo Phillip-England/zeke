@@ -4,7 +4,7 @@ use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::{TcpListener, TcpStream}, ti
 
 use crate::http::router::Router;
 use crate::http::response::to_bytes;
-use crate::http::response::get_response;
+use crate::http::response::new_response;
 use crate::http::response::not_found;
 use crate::http::response::Response;
 use crate::http::request::RequestBuffer;
@@ -36,7 +36,7 @@ pub async fn read_socket(mut socket: TcpStream) -> (TcpStream, RequestBuffer) {
         },
 		// read timed out
         Err(_) => {
-            let response = get_response(408, "Request Timeout".to_string());
+            let response = new_response(408, "Request Timeout".to_string());
             let response_bytes = to_bytes(response);
             let write_result = socket.write_all(&response_bytes).await;
             match write_result {
@@ -66,7 +66,7 @@ pub async fn write_socket(mut socket: TcpStream, response: &[u8]) -> (TcpStream,
 		},
         // write timed out
 		Err(_) => {
-            let response_overwrite = get_response(408, "Request Timeout".to_string());
+            let response_overwrite = new_response(408, "Request Timeout".to_string());
             let response_bytes = to_bytes(response_overwrite);
             let write_result = socket.write_all(&response_bytes).await;
             match write_result {
