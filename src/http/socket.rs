@@ -2,78 +2,86 @@ use std::{collections::HashMap, fmt::Error, io::{self, ErrorKind}, str::Bytes, s
 
 use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::{TcpListener, TcpStream}, time::timeout};
 
-use crate::router;
+use crate::http::router::Router;
+use crate::http::response::to_bytes;
+use crate::http::response::get_response;
+use crate::http::request::RequestBuffer;
+use crate::http::request::get_request_buffer;
 
-use super::router::Router;
+use super::request::usize_to_buffer;
 
 
 
 pub async fn connect(listener: TcpListener, router: Arc<Router>) {
 	let (socket, _) = listener.accept().await.unwrap(); // TODO
 	tokio::spawn(async move {
-		let (socket, timeout_result) = read_socket(socket).await;
-		match timeout_result {
-			Ok(request_data) => {
-				println!("Request data: {:?}", request_data);
-				let route = router.get("/").unwrap();
-				let response = route.lock().unwrap()();
-				println!("Response: {:?}", response);
-			},
-			Err(e) => {
-				match e.kind() {
-					ErrorKind::TimedOut => {
-						let (mut socket, write_result) = write_socket(socket, b"HTTP/1.1 408 Request Timeout\r\n\r\n").await;
-						match write_result {
-							Ok(_) => {
-								let _ = socket.shutdown().await;
-								return;
-							},
-							Err(e) => {
-								eprintln!("Error writing to socket: {}", e);
-								return;
-							}
-						}
-					},
-					_ => {
-						eprintln!("Error reading from socket: {}", e);
-					}
-				}
-				eprintln!("Error reading from socket: {}", e);
-			},
-		}
-
+		let (socket, request_bytes) = read_socket(socket).await;
+        if request_bytes.len() == 0 {
+            return
+        }
+        let route = router.get("/").unwrap();
+        let response = route.lock().unwrap()();
+        let response_bytes = to_bytes(response);
+        let (mut socket, write_result) = write_socket(socket, &response_bytes).await;
 	});
 }
 
-pub async fn read_socket(mut socket: TcpStream) -> (TcpStream, Result<(usize), io::Error>) {
-	let mut buffer: [u8; 1024] = [0; 1024];
+pub async fn read_socket(mut socket: TcpStream) -> (TcpStream, RequestBuffer) {
+	let mut buffer: RequestBuffer = get_request_buffer();
 	let read_timeout = timeout(Duration::from_secs(5), socket.read(&mut buffer)).await;
 	match read_timeout {
 		Ok(Ok(request_data)) => {
-			return (socket, Ok(request_data));
+			return (socket, usize_to_buffer(request_data));
 		},
 		// unable to read from socket
         Ok(Err(e)) => {
-            return (socket, Err(e));
+            socket.shutdown().await.unwrap();
+            return (socket, get_request_buffer());
         },
 		// read timed out
         Err(_) => {
-            return (socket, Err(io::Error::new(io::ErrorKind::TimedOut, "connection timed out")));
+            let response = get_response(408, "Request Timeout".to_string());
+            let response_bytes = to_bytes(response);
+            let write_result = socket.write_all(&response_bytes).await;
+            match write_result {
+                Ok(_) => {
+                    socket.shutdown().await.unwrap();
+                    return (socket, get_request_buffer());
+                },
+                Err(e) => {
+                    return (socket, get_request_buffer());
+                },
+            }
         },
 	}
 }
 
-pub async fn write_socket(mut socket: TcpStream, response: &[u8]) -> (TcpStream, Result<(), io::Error>) {
+
+pub async fn write_socket(mut socket: TcpStream, response: &[u8]) -> (TcpStream, bool) {
 	let write_timeout = timeout(Duration::from_secs(5), socket.write_all(response)).await;
-	match write_timeout {
+    match write_timeout {
 		Ok(Ok(_)) => {
-			return (socket, Ok(()));
+			return (socket, false);
 		},
+        // unable to write to socket
 		Ok(Err(e)) => {
-			return (socket, Err(e));
+            socket.shutdown().await.unwrap();
+			return (socket, true);
 		},
+        // write timed out
 		Err(_) => {
-			return (socket, Err(io::Error::new(io::ErrorKind::TimedOut, "write timed out")));
+            let response_overwrite = get_response(408, "Request Timeout".to_string());
+            let response_bytes = to_bytes(response_overwrite);
+            let write_result = socket.write_all(&response_bytes).await;
+            match write_result {
+                Ok(_) => {
+                    socket.shutdown().await.unwrap();
+                    return (socket, true);
+                },
+                Err(e) => {
+                    return (socket, true);
+                },
+            }
 		},
 	}
 }
