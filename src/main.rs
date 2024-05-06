@@ -5,18 +5,17 @@ mod http;
 use std::sync::Arc;
 
 use http::app;
-use http::router::{self, new_middleware, test1_middleware, test_middleware, Handler};
+use http::router::{Router, Handler, new_router, new_handler, add_route};
 
-use crate::http::router::MiddlewareMutex;
-
+use http::middleware::{new_middleware, MiddlewareMutex};
 
 #[tokio::main]
 async fn main() {
 
 
-	let mut router: router::Router = router::new_router();
+	let mut router: Router = new_router();
 
-    let handle_hello_world: Handler = router::new_handler(|request| {
+    let handle_hello_world: Handler = new_handler(|request| {
         http::response::Response {
             status: 200,
             body: "Hello, World!".to_string(),
@@ -31,8 +30,8 @@ async fn main() {
     } 
         
 
-    router::insert(&mut router, "GET /", Arc::clone(&handle_hello_world), vec![custom_mw()]);
-    router::insert(&mut router, "GET /yo", Arc::clone(&handle_hello_world), vec![]);
+    add_route(&mut router, "GET /", Arc::clone(&handle_hello_world), vec![custom_mw()]);
+    add_route(&mut router, "GET /yo", Arc::clone(&handle_hello_world), vec![]);
 
 
 

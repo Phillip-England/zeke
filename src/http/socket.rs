@@ -1,15 +1,12 @@
-use std::{ sync::{Arc, Mutex}, time::Duration};
+use std::{ sync::{Arc}, time::Duration};
 
 use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::{TcpListener, TcpStream}, time::timeout};
 
-use crate::http::router::{Middlewares, Router};
-use crate::http::response::to_bytes;
-use crate::http::response::new_response;
-use crate::http::response::not_found;
-use crate::http::response::Response;
-use crate::http::request::RequestBuffer;
-use crate::http::request::Request;
-use crate::http::request::new_request;
+use crate::http::router::Router;
+use crate::http::middleware::Middlewares;
+
+use crate::http::response::{to_bytes, new_response, not_found, Response};
+use crate::http::request::{Request, new_request, RequestBuffer};
 
 
 
