@@ -5,7 +5,7 @@ mod http;
 use std::sync::Arc;
 
 use http::app;
-use http::router::{self, Handler};
+use http::router::{self, test_middleware, Handler};
 
 
 #[tokio::main]
@@ -21,7 +21,7 @@ async fn main() {
         }
     });
 
-    router::insert(&mut router, "GET /", handle_hello_world);
+    router::insert(&mut router, "GET /", handle_hello_world, vec![test_middleware()]);
 
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:8080").await;

@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 pub type RequestBuffer = [u8; 1024];
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Request {
     pub method_and_path: String,
     pub method: String,

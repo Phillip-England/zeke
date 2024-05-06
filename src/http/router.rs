@@ -5,9 +5,12 @@ use crate::http::request::Request;
 
 pub type RouteHandler = (Handler, Middlewares);
 pub type RouteHandlerMutex = Arc<Mutex<RouteHandler>>;
-pub type Router = HashMap<&'static str, RouteHandler>;
-pub type Middleware = Box<dyn Fn(Request) -> Option<Response>>;
-pub type Middlewares = Vec<Middleware>;
+pub type Router = HashMap<&'static str, Arc<Mutex<RouteHandler>>>;
+
+pub type Middleware = Box<dyn Fn(Request) -> Option<Response> + Send + 'static>;
+
+pub type MiddlewareMutex = Arc<Mutex<Middleware>>;
+pub type Middlewares = Vec<MiddlewareMutex>;
 
 pub fn new_router() -> Router {
 	let router: Router = HashMap::new();
@@ -16,7 +19,8 @@ pub fn new_router() -> Router {
 
 pub fn insert(router: &mut Router, path: &'static str, handler: Handler, middlewares: Middlewares) {
 	let handler: RouteHandler = (handler, middlewares);
-	router.insert(path, handler);
+    let handler_mutex = Arc::new(Mutex::new(handler));
+	router.insert(path, handler_mutex);
 }
 
 pub type Handler = Box<dyn Fn(Request) -> Response + Send + 'static>;
@@ -29,14 +33,14 @@ where
 }
 
 
-pub fn new_middleware<F>(f: F) -> Middleware
+pub fn new_middleware<F>(f: F) -> MiddlewareMutex
 where
-	F: Fn(Request) -> Option<Response> + 'static,
+	F: Fn(Request) -> Option<Response> + Send + 'static,
 {
-	Box::new(f)
+	Arc::new(Mutex::new(Box::new(f)))
 }
 
-pub fn test_middleware() -> Middleware {
+pub fn test_middleware() -> MiddlewareMutex {
 	new_middleware(|request: Request| {
 		Some(Response {
 			status: 200,
