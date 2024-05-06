@@ -42,6 +42,7 @@ pub async fn handle_connection(socket: TcpStream, router: Arc<Router>) {
             return
         }
         let request = request.unwrap();
+        println!("{:?}", request);
         let route = router.get("GET /");
         match route {
             Some(route) => {

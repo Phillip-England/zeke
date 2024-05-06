@@ -7,7 +7,6 @@ use crate::http::router::Router;
 use crate::http::response::to_bytes;
 use crate::http::response::get_response;
 use crate::http::request::RequestBuffer;
-use crate::http::request::new_request;
 
 
 

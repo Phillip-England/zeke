@@ -8,7 +8,7 @@ pub struct Request {
 }
 
 pub fn new_request(buffer: RequestBuffer) -> Option<Request> {
-    let mut request = Request {
+    let request = Request {
         line_method: "".to_string(),
     };
     let (parsed_request, failed) = parse(request, buffer);
@@ -26,9 +26,7 @@ pub fn parse(mut request: Request, buffer: RequestBuffer) -> (Request, bool) {
         }
         Ok(request_string) => {
             let lines: Vec<&str> = request_string.lines().collect();
-            for line in lines {
-                println!("{}", line.to_string());
-            }
+            request.line_method = lines[0].to_string();
             return (request, false);
         }
     }
