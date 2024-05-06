@@ -46,7 +46,7 @@ pub async fn handle_connection(socket: TcpStream, router: Arc<Router>) -> (TcpSt
                             return (socket, response);
                         },
                         None => {
-                            return (socket, new_response(500, "Failed to handle request".to_string()));
+                            return (socket, new_response(500, "failed to handle request".to_string()));
                         },
                     }
                 },
@@ -69,8 +69,16 @@ pub async fn handle_request(router: Arc<Router>, request: Request) -> Option<Res
                             return Some(response);
                         },
                         None => {
-                            let response = handler(request);
-                            return Some(response);
+                            let handler = handler.lock();
+                            match handler {
+                                Ok(handler) => {
+                                    let response = handler(request);
+                                    return Some(response);
+                                }
+                                Err(_) => {
+                                    return Some(new_response(500, "failed to lock handler".to_string()));
+                                }
+                            }
                         },
                     }
                 },  

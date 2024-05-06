@@ -6,6 +6,7 @@ use crate::http::request::Request;
 pub type RouteHandler = (Handler, Middlewares);
 pub type RouteHandlerMutex = Arc<Mutex<RouteHandler>>;
 pub type Router = HashMap<&'static str, Arc<Mutex<RouteHandler>>>;
+pub type Handler = Arc<Mutex<Box<dyn Fn(Request) -> Response + Send + 'static>>>;
 
 pub type Middleware = Box<dyn Fn(Request) -> (Request, Option<Response>)  + Send + 'static>;
 
@@ -23,13 +24,12 @@ pub fn insert(router: &mut Router, path: &'static str, handler: Handler, middlew
 	router.insert(path, handler_mutex);
 }
 
-pub type Handler = Box<dyn Fn(Request) -> Response + Send + 'static>;
 
 pub fn new_handler<F>(f: F) -> Handler
 where
     F: Fn(Request) -> Response + Send + 'static,
 {
-    Box::new(f)
+    Arc::new(Mutex::new(Box::new(f)))
 }
 
 
@@ -44,7 +44,7 @@ pub fn test1_middleware() -> MiddlewareMutex {
 	new_middleware(|request: Request| {
 		let response = Some(Response {
 			status: 200,
-			body: "I am first!".to_string(),
+			body: "I am!".to_string(),
 		});
         return (request, response);
 	})
