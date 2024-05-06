@@ -3,9 +3,11 @@
 total_requests=1000
 concurrent_requests=100
 
+start_time=$(date +%s)  # Capture start time in seconds
+
 for ((i = 1; i <= total_requests; i += concurrent_requests))
 do
-    # Start a batch of 10 concurrent requests
+    # Start a batch of concurrent requests
     for ((j = 0; j < concurrent_requests; j++))
     do
         curl localhost:8080 &
@@ -15,4 +17,7 @@ do
     wait
 done
 
+end_time=$(date +%s)  # Capture end time in seconds
+duration=$((end_time - start_time))  # Calculate duration
 
+echo "Total process time: $duration seconds"
