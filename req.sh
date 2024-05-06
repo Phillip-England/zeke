@@ -1,7 +1,7 @@
 #!/bin/bash
 
 total_requests=1000
-concurrent_requests=10
+concurrent_requests=100
 
 for ((i = 1; i <= total_requests; i += concurrent_requests))
 do

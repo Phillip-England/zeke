@@ -7,6 +7,7 @@ use std::sync::Arc;
 use http::app;
 use http::router;
 
+
 #[tokio::main]
 async fn main() {
 
@@ -21,9 +22,10 @@ async fn main() {
         }
     });
 
-    router::insert(&mut router, "/", handle_hello_world);
+    router::insert(&mut router, "GET /", handle_hello_world);
 
 	let router = Arc::new(router);
 
-    app::serve(router).await;    
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:8080").await;
+    app::serve(router, listener).await; 
 }

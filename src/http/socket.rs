@@ -1,7 +1,8 @@
-use std::{collections::HashMap, fmt::Error, io::{self, ErrorKind}, str::Bytes, sync::Arc, time::Duration};
+use std::{ sync::Arc, time::Duration};
 
 use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::{TcpListener, TcpStream}, time::timeout};
 
+use crate::app::handle_connection;
 use crate::http::router::Router;
 use crate::http::response::to_bytes;
 use crate::http::response::get_response;
@@ -13,19 +14,12 @@ use super::request::usize_to_buffer;
 
 
 
-pub async fn connect(listener: TcpListener, router: Arc<Router>) {
+pub async fn connect(listener: &TcpListener, router: Arc<Router>) {
 	let (socket, _) = listener.accept().await.unwrap(); // TODO
 	tokio::spawn(async move {
-		let (socket, request_bytes) = read_socket(socket).await;
-        if request_bytes.len() == 0 {
-            return
-        }
-        let request = new_request(request_bytes);
-        let route = router.get("/").unwrap();
-        let response = route.lock().unwrap()(request);
-        let response_bytes = to_bytes(response);
-        let (mut socket, write_result) = write_socket(socket, &response_bytes).await;
-	});
+        handle_connection(socket, router).await;
+
+    });
 }
 
 pub async fn read_socket(mut socket: TcpStream) -> (TcpStream, RequestBuffer) {
