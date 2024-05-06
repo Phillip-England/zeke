@@ -40,6 +40,16 @@ where
 	Arc::new(Mutex::new(Box::new(f)))
 }
 
+pub fn test1_middleware() -> MiddlewareMutex {
+	new_middleware(|request: Request| {
+		let response = Some(Response {
+			status: 200,
+			body: "I am first!".to_string(),
+		});
+        return (request, response);
+	})
+}
+
 pub fn test_middleware() -> MiddlewareMutex {
 	new_middleware(|request: Request| {
 		let response = Some(Response {

@@ -18,39 +18,40 @@ use crate::http::request::new_request;
 pub async fn connect(listener: &TcpListener, router: Arc<Router>) {
 	let (socket, _) = listener.accept().await.unwrap(); // TODO: unwrap
 	tokio::spawn(async move {
-        let (socket, potential_response) = handle_connection(socket, router).await;
-        match potential_response {
-            Some(response) => {
-                let response_bytes = to_bytes(response);
-                let socket = write_socket(socket, &response_bytes).await;
-            },
-            None => {
-                return
-            },
-        }
+        let (socket, response) = handle_connection(socket, router).await;
+        let response_bytes = to_bytes(response);
+        write_socket(socket, &response_bytes).await;
     });
 }
 
-pub async fn handle_connection(socket: TcpStream, router: Arc<Router>) -> (TcpStream, Option<Response>) {
-    let (socket, request_bytes, potetial_response)  = read_socket(socket).await;
-    if request_bytes.len() == 0 {
-        return (socket, None::<Response>); // TODO: return a response from here
-    }
-    let request = new_request(request_bytes);
-    match request {
-        Some(request) => {
-            let potential_response = handle_request(router, request).await;
-            if potential_response.is_some() {
-                return (socket, potential_response);
-            }
-            // TODO: return a 500 ISE response from here
-            // this means that the request was not handled by the router
-            return (socket, None);
+pub async fn handle_connection(socket: TcpStream, router: Arc<Router>) -> (TcpStream, Response) {
+    let (socket, request_bytes, potetial_response) = read_socket(socket).await;
+    match potetial_response {
+        Some(response) => {
+            return (socket, response);
         },
         None => {
-            return (socket, None);
+            if request_bytes.len() == 0 {
+                return (socket, new_response(500, "Read 0 bytes from client connection".to_string())); // TODO: return a response from here
+            }
+            let (request, potential_response) = new_request(request_bytes);
+            match potential_response {
+                Some(response) => {
+                    return (socket, response);
+                },
+                None => {
+                    let potential_response = handle_request(router, request).await;
+                    match potential_response {
+                        Some(response) => {
+                            return (socket, response);
+                        },
+                        None => {
+                            return (socket, new_response(500, "Failed to handle request".to_string()));
+                        },
+                    }
+                },
+            }
         },
-        
     }
 }
 
@@ -114,11 +115,9 @@ pub async fn read_socket(mut socket: TcpStream) -> (TcpStream, RequestBuffer, Op
 			return (socket, buffer, None);
 		},
 		// unable to read from socket
-        Ok(Err(e)) => {
+        Ok(Err(_)) => {
             for _ in 0..5 {
-                let response = new_response(500, "Internal Server Error".to_string());
-                let response_bytes = to_bytes(response);
-                let result = socket.write_all(&response_bytes).await;
+                let result = socket.read(&mut buffer).await;
                 match result {
                     Ok(_) => {
                         return (socket, buffer, None);
@@ -128,32 +127,58 @@ pub async fn read_socket(mut socket: TcpStream) -> (TcpStream, RequestBuffer, Op
                     },
                 }
             }
-            return (socket, buffer, None);
+            return (socket, buffer, Some(new_response(500, "unable to read client socket".to_string())));
         },
 		// read timed out
         Err(_) => {
-            let response = new_response(408, "Request Timeout".to_string());
+            let response = new_response(408, "request timeout".to_string());
             return (socket, buffer, Some(response));
         },
 	}
 }
 
-pub async fn write_socket(mut socket: TcpStream, response: &[u8]) -> (TcpStream, Option<Response>) {
-	let write_timeout = timeout(Duration::from_secs(5), socket.write_all(response)).await;
+pub async fn write_socket(mut socket: TcpStream, response_bytes: &[u8]) {
+	let write_timeout = timeout(Duration::from_secs(5), socket.write_all(response_bytes)).await;
     match write_timeout {
 		Ok(Ok(_)) => {
-			return (socket, None);
+            return;
 		},
         // unable to write to socket
         Ok(Err(e)) => {
             // TODO: make number of failed attempts configurable
-            let response = new_response(500, "Internal Server Error".to_string());
-            return (socket, Some(response));
+            // right not we are making 5 attemps to write to the socket
+            let response = new_response(500, "failed to write to socket".to_string());
+            let response_bytes = to_bytes(response);
+            for _ in 0..5 {
+                let result = socket.write_all(&response_bytes).await;
+                match result {
+                    Ok(_) => {
+                        return;
+                    },
+                    Err(_) => {
+                        continue;
+                    },
+                }
+            }
+
         },
         // write timed out
 		Err(_) => {
             let response = new_response(408, "Request Timeout".to_string());
-            return (socket, Some(response))
+            let response_bytes = to_bytes(response);
+            for _ in 0..5 {
+                let result = socket.write_all(&response_bytes).await;
+                match result {
+                    Ok(_) => {
+                        return;
+                    },
+                    Err(_) => {
+                        continue;
+                    },
+                }
+            }
+
+
 		},
 	}
 }
