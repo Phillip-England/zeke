@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::response::{new_response, Response};
+use crate::http::response::{new_response, Response};
 
 
 
@@ -35,7 +35,7 @@ pub fn parse(mut request: Request, buffer: RequestBuffer) -> (Request, Option<Re
     let request_string = String::from_utf8(buffer[..end].to_vec());
     match request_string {
         Err(_) => {
-            return (request, Some(new_response(500, "Failed to parse request using from_utf8".to_string())));
+            return (request, Some(new_response(500, "failed to parse request using from_utf8".to_string())));
         }
         Ok(request_string) => {
             let lines: Vec<&str> = request_string.lines().collect();
@@ -45,7 +45,7 @@ pub fn parse(mut request: Request, buffer: RequestBuffer) -> (Request, Option<Re
                 if i == 0 {
                     let parts = line.split(" ").collect::<Vec<&str>>();
                     if parts.len() != 3 {
-                        return (request, Some(new_response(500, "Request did not have 3 parts: {method} {path} {protocol}".to_string())));
+                        return (request, Some(new_response(500, "request did not have 3 parts: {method} {path} {protocol}".to_string())));
                     }
                     let method = parts[0];
                     let path = parts[1];

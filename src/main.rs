@@ -4,9 +4,9 @@ mod http;
 
 use std::sync::Arc;
 
-use http::app;
+use http::app::serve;
 use http::router::{Router, Handler, new_router, new_handler, add_route};
-
+use http::response::new_response;
 use http::middleware::{new_middleware, MiddlewareMutex};
 
 #[tokio::main]
@@ -15,11 +15,8 @@ async fn main() {
 
 	let mut router: Router = new_router();
 
-    let handle_hello_world: Handler = new_handler(|request| {
-        http::response::Response {
-            status: 200,
-            body: "Hello, World!".to_string(),
-        }
+    let handle_hello_world: Handler = new_handler(|_| {
+        return new_response(200, "Hello, World!".to_string());
     });
 
     fn simple_logger() -> MiddlewareMutex {
@@ -36,5 +33,6 @@ async fn main() {
 
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:8080").await;
-    app::serve(router, listener).await; 
+    serve(router, listener).await; 
+
 }

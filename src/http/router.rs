@@ -2,10 +2,9 @@ use std::{collections::HashMap, sync::{Arc, Mutex}};
 
 use crate::http::response::Response;
 use crate::http::request::Request;
-use crate::http::middleware::{Middlewares, MiddlewareMutex};
+use crate::http::middleware::Middlewares;
 
 pub type RouteHandler = (Handler, Middlewares);
-pub type RouteHandlerMutex = Arc<Mutex<RouteHandler>>;
 pub type Router = HashMap<&'static str, Arc<Mutex<RouteHandler>>>;
 pub type Handler = Arc<Mutex<Box<dyn Fn(Request) -> Response + Send + 'static>>>;
 
