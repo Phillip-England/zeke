@@ -5,7 +5,8 @@ mod http;
 use std::sync::Arc;
 
 use http::app::serve;
-use http::router::{Router, Handler, new_router, new_handler, add_route};
+use http::router::{Router, new_router, new_handler, add_route};
+use http::handler::HandlerMutex;
 use http::response::new_response;
 use http::middleware::{new_middleware, MiddlewareMutex};
 
@@ -15,7 +16,7 @@ async fn main() {
 
 	let mut router: Router = new_router();
 
-    let handle_hello_world: Handler = new_handler(|_| {
+    let handle_hello_world: HandlerMutex = new_handler(|_| {
         return new_response(200, "Hello, World!".to_string());
     });
 

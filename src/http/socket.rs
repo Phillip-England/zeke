@@ -1,13 +1,13 @@
 use std::time::Duration;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, PoisonError, MutexGuard};
 
 use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::{TcpListener, TcpStream}, time::timeout};
 
-use crate::http::router::Router;
+use crate::http::router::{Router, RouteHandler};
 use crate::http::middleware::Middlewares;
-use crate::http::response::{to_bytes, new_response, not_found, Response};
+use crate::http::response::{to_bytes, new_response, not_found, Response, PotentialResponse};
 use crate::http::request::{Request, new_request, RequestBuffer};
-use crate::http::router::RouteHandler;
+use crate::http::handler::{HandlerMutex, Handler};
 
 
 
@@ -58,7 +58,7 @@ pub async fn handle_connection(socket: TcpStream, router: Arc<Router>) -> (TcpSt
                     return (socket, response);
                 },
                 None => {
-                    let potential_response = handle_request(router, request).await;
+                    let potential_response: Option<Response> = handle_request(router, request).await;
                     match potential_response {
                         Some(response) => {
                             return (socket, response);
@@ -73,11 +73,11 @@ pub async fn handle_connection(socket: TcpStream, router: Arc<Router>) -> (TcpSt
     }
 }
 
-pub async fn handle_request(router: Arc<Router>, request: Request) -> Option<Response> {
+pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialResponse {
     let route_handler: Option<&Arc<Mutex<RouteHandler>>> = router.get(request.method_and_path.as_str());
     match route_handler {
         Some(route_handler) => {
-            let potential_route = route_handler.lock();
+            let potential_route: Result<MutexGuard<(HandlerMutex, Middlewares)>, PoisonError<MutexGuard<(HandlerMutex, Middlewares)>>> = route_handler.lock();
             match potential_route {
                 Ok(route_handler) => {
                     let (handler, middlewares) = &*route_handler;
@@ -87,10 +87,10 @@ pub async fn handle_request(router: Arc<Router>, request: Request) -> Option<Res
                             return Some(response);
                         },
                         None => {
-                            let handler = handler.lock();
+                            let handler: Result<MutexGuard<Handler>, PoisonError<MutexGuard<Box<dyn Fn(Request) -> Response + Send>>>> = handler.lock();
                             match handler {
                                 Ok(handler) => {
-                                    let response = handler(request);
+                                    let response: Response = handler(request);
                                     return Some(response);
                                 }
                                 Err(_) => {
@@ -114,7 +114,7 @@ pub async fn handle_request(router: Arc<Router>, request: Request) -> Option<Res
 }
 
 
-pub fn handle_middleware(request: Request, middlewares: Middlewares) -> (Request, Option<Response>) {
+pub fn handle_middleware(request: Request, middlewares: Middlewares) -> (Request, PotentialResponse) {
     if middlewares.len() == 0 {
         return (request, None);
     };
@@ -133,7 +133,7 @@ pub fn handle_middleware(request: Request, middlewares: Middlewares) -> (Request
     return (request, None);
 }
 
-pub async fn read_socket(mut socket: TcpStream) -> (TcpStream, RequestBuffer, Option<Response>) {
+pub async fn read_socket(mut socket: TcpStream) -> (TcpStream, RequestBuffer, PotentialResponse) {
     let mut buffer: [u8; 1024] = [0; 1024];
     match timeout(Duration::from_secs(5), socket.read(&mut buffer)).await {
         Ok(Ok(bytes_read)) if bytes_read > 0 => {
@@ -155,7 +155,7 @@ pub async fn read_socket(mut socket: TcpStream) -> (TcpStream, RequestBuffer, Op
     }
 }
 
-pub async fn write_socket(mut socket: TcpStream, response_bytes: &[u8]) -> Option<Response> {
+pub async fn write_socket(mut socket: TcpStream, response_bytes: &[u8]) -> PotentialResponse {
     match timeout(Duration::from_secs(5), socket.write_all(response_bytes)).await {
         Ok(Ok(_)) => {
             return None;

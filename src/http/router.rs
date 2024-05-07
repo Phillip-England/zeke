@@ -3,10 +3,12 @@ use std::{collections::HashMap, sync::{Arc, Mutex}};
 use crate::http::response::Response;
 use crate::http::request::Request;
 use crate::http::middleware::Middlewares;
+use crate::http::handler::HandlerMutex;
 
-pub type RouteHandler = (Handler, Middlewares);
+pub type RouteHandler = (HandlerMutex, Middlewares);
 pub type Router = HashMap<&'static str, Arc<Mutex<RouteHandler>>>;
-pub type Handler = Arc<Mutex<Box<dyn Fn(Request) -> Response + Send + 'static>>>;
+
+
 
 
 
@@ -15,14 +17,14 @@ pub fn new_router() -> Router {
 	return router
 }
 
-pub fn add_route(router: &mut Router, path: &'static str, handler: Handler, middlewares: Middlewares) {
+pub fn add_route(router: &mut Router, path: &'static str, handler: HandlerMutex, middlewares: Middlewares) {
 	let handler: RouteHandler = (handler, middlewares);
     let handler_mutex = Arc::new(Mutex::new(handler));
 	router.insert(path, handler_mutex);
 }
 
 
-pub fn new_handler<F>(f: F) -> Handler
+pub fn new_handler<F>(f: F) -> HandlerMutex
 where
     F: Fn(Request) -> Response + Send + 'static,
 {

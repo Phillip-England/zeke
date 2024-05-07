@@ -1,5 +1,8 @@
 
 
+
+pub type PotentialResponse = Option<Response>;
+
 #[derive(Debug)]
 pub struct Response {
     pub status: u16,
