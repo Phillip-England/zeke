@@ -5,8 +5,8 @@ mod http;
 use std::sync::Arc;
 
 use http::app::serve;
-use http::router::{Router, new_router, new_handler, add_route};
-use http::handler::HandlerMutex;
+use http::router::{Router, Route, new_router, add_route};
+use http::handler::{HandlerMutex, new_handler};
 use http::response::new_response;
 use http::middleware::{new_middleware, MiddlewareMutex};
 
@@ -27,10 +27,17 @@ async fn main() {
         });
     } 
         
+    let router = add_route(router, Route {
+        path: "GET /hello",
+        handler: Arc::clone(&handle_hello_world),
+        middlewares: vec![simple_logger()],
+    });
 
-    add_route(&mut router, "GET /", Arc::clone(&handle_hello_world), vec![]);
-    add_route(&mut router, "GET /log", Arc::clone(&handle_hello_world), vec![simple_logger()]);
-
+    let router = add_route(router, Route {
+        path: "GET /",
+        handler: Arc::clone(&handle_hello_world),
+        middlewares: vec![simple_logger()],
+    });
 
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:8080").await;
