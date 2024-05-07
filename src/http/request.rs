@@ -1,10 +1,11 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Debug};
+use serde::{Serialize, Deserialize};
+use bincode;
 
 use crate::http::response::{new_response, Response};
 
-
-
 pub type RequestBuffer = [u8; 1024];
+pub type RequestContext = HashMap<String, String>;
 
 #[derive(Debug, Clone)]
 pub struct Request {
@@ -14,6 +15,7 @@ pub struct Request {
     pub protocol: String,
     pub body: String,
     pub headers: HashMap<String, String>,
+    pub context: RequestContext,
 }
 
 pub fn new_request(buffer: RequestBuffer) -> (Request, Option<Response>) {
@@ -24,6 +26,7 @@ pub fn new_request(buffer: RequestBuffer) -> (Request, Option<Response>) {
         protocol: "".to_string(),
         body: "".to_string(),
         headers: HashMap::new(),
+        context: HashMap::new(),
     };
     let (parsed_request, potential_response) = parse(request, buffer);
     return (parsed_request, potential_response);
@@ -80,7 +83,6 @@ pub fn parse(mut request: Request, buffer: RequestBuffer) -> (Request, Option<Re
     }
 }
 
-
 /// Get a header from a request.
 /// Returns an empty string if header does not exist
 pub fn get_header(request: Request, key: &str) -> (Request, String) {
@@ -94,3 +96,19 @@ pub fn get_header(request: Request, key: &str) -> (Request, String) {
     }
     return (request, header);
 }
+pub fn set_context(request: &mut Request, key: String, value: String) {
+    request.context.insert(key, value);
+}
+
+pub fn extract_context_str(context: &RequestContext, key: String) -> String {
+    let result = context.get(&key);
+    match result {
+        Some(str) => {
+            return str.to_string();
+        },
+        None => {
+            return "".to_string();
+        }
+    }
+}
+

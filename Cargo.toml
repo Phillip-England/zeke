@@ -5,3 +5,5 @@ edition = "2021"
 
 [dependencies]
 tokio = { version = "1.37.0", features = ["full"] }
+serde = { version = "1.0.200" }
+bincode = { version = "1.3.3" }

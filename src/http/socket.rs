@@ -13,7 +13,7 @@ use crate::http::handler::{HandlerMutex, Handler};
 
 
 
-pub async fn connect(listener: &TcpListener, router: Arc<Router>) {
+pub async fn connect_socket(listener: &TcpListener, router: Arc<Router>) {
 	let socket_result = listener.accept().await;
     match socket_result {
         Ok(socket_result) => {
@@ -28,7 +28,7 @@ pub async fn connect(listener: &TcpListener, router: Arc<Router>) {
                         println!("failed to write to socket: {:?}", response);
                     },
                     None => {
-                        return;
+                        // proceed to shutdown
                     },
                 }
                 let shutdown_result = socket.shutdown().await;
@@ -124,7 +124,7 @@ pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialR
 
 }
 
-pub fn handle_middleware(request: Request, middlewares: Middlewares) -> (Request, PotentialResponse) {
+pub fn handle_middleware(mut request: Request, middlewares: Middlewares) -> (Request, PotentialResponse) {
     if middlewares.len() == 0 {
         return (request, None);
     };
@@ -132,8 +132,15 @@ pub fn handle_middleware(request: Request, middlewares: Middlewares) -> (Request
         let middleware: Result<MutexGuard<Middleware>, PoisonError<MutexGuard<Middleware>>> = middleware.lock();
         match middleware {
             Ok(middleware) => {
-                let (request, potential_response) = middleware(request);
-                return (request, potential_response);
+                let potential_response = middleware(&mut request);
+                match potential_response {
+                    Some(response) => {
+                        return (request, Some(response));
+                    },
+                    None => {
+                        continue;
+                    }
+                }
             },
             // we had a posion error when trying to lock the middleware
             Err(_) => {

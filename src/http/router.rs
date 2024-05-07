@@ -1,11 +1,9 @@
 use std::{collections::HashMap, sync::{Arc, Mutex}};
 use std::io::Error;
 
-use tokio::net::TcpListener;
-
 use crate::http::middleware::Middlewares;
 use crate::http::handler::HandlerMutex;
-use crate::http::socket::connect;
+use crate::http::socket::connect_socket;
 
 pub type RouteHandler = (HandlerMutex, Middlewares);
 pub type Router = HashMap<&'static str, Arc<Mutex<RouteHandler>>>;
@@ -34,7 +32,7 @@ pub async fn serve(router: Router, addr: String) -> Option<Error> {
         Ok(ref listener) => {
             loop {
                 let router: Arc<Router> = Arc::clone(&router); // TODO: is cloning the router bad?
-                connect(listener, router).await; 
+                connect_socket(listener, router).await; 
             }
         },
         Err(e) => {
