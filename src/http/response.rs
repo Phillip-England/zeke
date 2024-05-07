@@ -8,6 +8,7 @@ pub struct Response {
     pub status: u16,
     pub body: String,
 }
+pub type ResponseBytes = Vec<u8>;
 
 pub fn new_response(status: u16, body: String) -> Response {
     Response {
@@ -16,7 +17,7 @@ pub fn new_response(status: u16, body: String) -> Response {
     }
 }
 
-pub fn to_bytes(response: Response) -> Vec<u8> {
+pub fn to_bytes(response: Response) -> ResponseBytes {
     format!("HTTP/1.1 {}\r\n\r\n{}", response.status, response.body).into_bytes()
 }
 

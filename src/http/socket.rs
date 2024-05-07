@@ -4,8 +4,8 @@ use std::sync::{Arc, Mutex, PoisonError, MutexGuard};
 use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::{TcpListener, TcpStream}, time::timeout};
 
 use crate::http::router::{Router, RouteHandler};
-use crate::http::middleware::Middlewares;
-use crate::http::response::{to_bytes, new_response, not_found, Response, PotentialResponse};
+use crate::http::middleware::{Middlewares, Middleware};
+use crate::http::response::{to_bytes, new_response, not_found, Response, ResponseBytes, PotentialResponse};
 use crate::http::request::{Request, new_request, RequestBuffer};
 use crate::http::handler::{HandlerMutex, Handler};
 
@@ -20,8 +20,8 @@ pub async fn connect(listener: &TcpListener, router: Arc<Router>) {
             let (socket, _addr) = socket_result;
             tokio::spawn(async move {
                 let (socket, response) = handle_connection(socket, router).await;
-                let response_bytes = to_bytes(response);
-                let write_result = write_socket(socket, &response_bytes).await;
+                let response_bytes: ResponseBytes = to_bytes(response);
+                let (mut socket, write_result) = write_socket(socket, &response_bytes).await;
                 match write_result {
                     Some(response) => {
                         // TODO: set up logging when writes fail
@@ -31,11 +31,21 @@ pub async fn connect(listener: &TcpListener, router: Arc<Router>) {
                         return;
                     },
                 }
+                let shutdown_result = socket.shutdown().await;
+                match shutdown_result {
+                    Ok(_) => {
+                        return;
+                    },
+                    Err(e) => {
+                        // TODO: set up logging when shutdown fails
+                        // TODO: search up the implications of shutdown failure
+                    }
+                };
             });
         },
         Err(_) => {
             // TODO: Set up logging for when connecting to socket fails
-            return; // return if socket connection fails
+            return;
         },
     }
 
@@ -58,7 +68,7 @@ pub async fn handle_connection(socket: TcpStream, router: Arc<Router>) -> (TcpSt
                     return (socket, response);
                 },
                 None => {
-                    let potential_response: Option<Response> = handle_request(router, request).await;
+                    let potential_response: PotentialResponse = handle_request(router, request).await;
                     match potential_response {
                         Some(response) => {
                             return (socket, response);
@@ -87,7 +97,7 @@ pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialR
                             return Some(response);
                         },
                         None => {
-                            let handler: Result<MutexGuard<Handler>, PoisonError<MutexGuard<Box<dyn Fn(Request) -> Response + Send>>>> = handler.lock();
+                            let handler: Result<MutexGuard<Handler>, PoisonError<MutexGuard<Handler>>> = handler.lock();
                             match handler {
                                 Ok(handler) => {
                                     let response: Response = handler(request);
@@ -100,33 +110,35 @@ pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialR
                         },
                     }
                 },  
-                Err(_) => {
-                    None // TODO: return a response from here
+                // PoisonError is a type of error that occurs when a Mutex is poisoned
+                // TODO: set up logging for when a Mutex is poisoned
+                Err(_poision_error) => {
+                    return Some(new_response(500, "failed to lock route handler".to_string()));
                 },
             }
         },
         None => {
-            let response = not_found();
-            return Some(response);
+            return Some(not_found());
         },
     }
 
 }
-
 
 pub fn handle_middleware(request: Request, middlewares: Middlewares) -> (Request, PotentialResponse) {
     if middlewares.len() == 0 {
         return (request, None);
     };
     for middleware in middlewares {
-        let middleware = middleware.lock();
+        let middleware: Result<MutexGuard<Middleware>, PoisonError<MutexGuard<Middleware>>> = middleware.lock();
         match middleware {
             Ok(middleware) => {
                 let (request, potential_response) = middleware(request);
                 return (request, potential_response);
             },
+            // we had a posion error when trying to lock the middleware
             Err(_) => {
-                continue
+                // TODO: set up logging for when a middleware is poisoned
+                return (request, Some(new_response(500, "failed to lock middleware".to_string())));
             },
         }
     }
@@ -155,18 +167,18 @@ pub async fn read_socket(mut socket: TcpStream) -> (TcpStream, RequestBuffer, Po
     }
 }
 
-pub async fn write_socket(mut socket: TcpStream, response_bytes: &[u8]) -> PotentialResponse {
+pub async fn write_socket(mut socket: TcpStream, response_bytes: &[u8]) -> (TcpStream, PotentialResponse) {
     match timeout(Duration::from_secs(5), socket.write_all(response_bytes)).await {
         Ok(Ok(_)) => {
-            return None;
+            return (socket, None);
         },
         Ok(Err(e)) => {
             // TODO: set up logging
-            return Some(new_response(500, format!("Failed to write to socket: {}", e)));
+            return (socket, Some(new_response(500, format!("Failed to write to socket: {}", e))));
         },
         Err(_) => {
             // Timeout
-            return Some(new_response(408, "Write timeout".to_string()));
+            return (socket, Some(new_response(408, "Write timeout".to_string())));
         },
     }
 }
