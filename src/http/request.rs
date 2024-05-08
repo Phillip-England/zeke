@@ -1,13 +1,12 @@
 use std::{collections::HashMap, fmt::Debug};
 use serde::{Serialize, Deserialize};
 
-use crate::http::response::{new_response, Response, PotentialResponse};
-use serde_json; // Add this line to import the serde_json crate
+use crate::http::response::{new_response, Response};
 
 
 pub type RequestBuffer = [u8; 1024];
 pub type RequestContext = HashMap<String, String>;
-pub type RequestContextKey = String;
+pub type RequestContextKey = str;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Request {
@@ -110,20 +109,6 @@ pub fn extract_context_str(context: &RequestContext, key: String) -> String {
         },
         None => {
             return "".to_string();
-        }
-    }
-}
-
-pub fn set_context_encoded<T>(key: String, value: T) -> PotentialResponse 
-where
-    T: Serialize,
-{
-    match serde_json::to_string(&value) {
-        Ok(encoded_value) => {
-            return None;
-        },
-        Err(e) => {
-            return Some(new_response(500,  format!("failed to set json type to string: {}", e)));
         }
     }
 }

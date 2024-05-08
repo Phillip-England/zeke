@@ -92,7 +92,6 @@ pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialR
                 Ok(route_handler) => {
                     let (handler, middlewares, outerwares) = &*route_handler;
                     let (request, potential_response) = handle_middleware(request, middlewares.to_vec());
-                    println!("{:?}", request);
                     match potential_response {
                         Some(response) => {
                             return Some(response);
