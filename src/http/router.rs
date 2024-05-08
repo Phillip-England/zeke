@@ -5,12 +5,13 @@ use crate::http::middleware::Middlewares;
 use crate::http::handler::HandlerMutex;
 use crate::http::socket::connect_socket;
 
-pub type RouteHandler = (HandlerMutex, Middlewares);
+pub type RouteHandler = (HandlerMutex, Middlewares, Middlewares);
 pub type Router = HashMap<&'static str, Arc<Mutex<RouteHandler>>>;
 pub struct Route {
     pub path: &'static str,
     pub handler: HandlerMutex,
     pub middlewares: Middlewares,
+    pub outerwares: Middlewares,
 }
 
 pub fn new_router() -> Router {
@@ -19,7 +20,7 @@ pub fn new_router() -> Router {
 }
 
 pub fn add_route(mut router: Router, route: Route) -> Router {
-	let handler: RouteHandler = (route.handler, route.middlewares);
+	let handler: RouteHandler = (route.handler, route.middlewares, route.outerwares);
     let handler_mutex = Arc::new(Mutex::new(handler));
 	router.insert(route.path, handler_mutex);
     return router;

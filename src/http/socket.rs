@@ -87,11 +87,12 @@ pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialR
     let route_handler: Option<&Arc<Mutex<RouteHandler>>> = router.get(request.method_and_path.as_str());
     match route_handler {
         Some(route_handler) => {
-            let potential_route: Result<MutexGuard<(HandlerMutex, Middlewares)>, PoisonError<MutexGuard<(HandlerMutex, Middlewares)>>> = route_handler.lock();
+            let potential_route: Result<MutexGuard<(HandlerMutex, Middlewares, Middlewares)>, PoisonError<MutexGuard<(HandlerMutex, Middlewares, Middlewares)>>> = route_handler.lock();
             match potential_route {
                 Ok(route_handler) => {
-                    let (handler, middlewares) = &*route_handler;
+                    let (handler, middlewares, outerwares) = &*route_handler;
                     let (request, potential_response) = handle_middleware(request, middlewares.to_vec());
+                    println!("{:?}", request);
                     match potential_response {
                         Some(response) => {
                             return Some(response);
@@ -100,8 +101,16 @@ pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialR
                             let handler: Result<MutexGuard<Handler>, PoisonError<MutexGuard<Handler>>> = handler.lock();
                             match handler {
                                 Ok(handler) => {
-                                    let response: Response = handler(request);
-                                    return Some(response);
+                                    let (request, handler_response) = handler(request);
+                                    let (_, potential_response) = handle_middleware(request, outerwares.to_vec());
+                                    match potential_response {
+                                        Some(response) => {
+                                            return Some(response);
+                                        },
+                                        None => {
+                                            return Some(handler_response);
+                                        },
+                                    }
                                 }
                                 Err(_) => {
                                     return Some(new_response(500, "failed to lock handler".to_string()));

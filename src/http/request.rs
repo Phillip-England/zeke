@@ -114,7 +114,7 @@ pub fn extract_context_str(context: &RequestContext, key: String) -> String {
     }
 }
 
-pub fn set_context_encoded<T>(request: &mut Request, key: String, value: T) -> PotentialResponse 
+pub fn set_context_encoded<T>(key: String, value: T) -> PotentialResponse 
 where
     T: Serialize,
 {
