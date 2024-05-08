@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use http::router::{Router, Route, new_router, add_route, serve};
 use http::handler::{HandlerMutex, new_handler};
-use http::response::new_response;
+use http::response::{new_response, set_header};
 use http::middleware::{mw_trace_init, mw_trace_log_request};
 
 #[tokio::main]
@@ -16,7 +16,8 @@ async fn main() {
 	let router: Router = new_router();
 
     let handle_hello_world: HandlerMutex = new_handler(|request| {
-        return (request, new_response(200, "Hello, World!".to_string()));
+        let response = new_response(200, "<h1>Hello, World!</h1>".to_string());
+        return (request, new_response(200, "<h1>Hello, World!</h1>".to_string()));
     });
 
     let router = add_route(router, Route {
@@ -35,6 +36,6 @@ async fn main() {
 
     
     // TODO: convert types to &str if possible
-    serve(router, "127.0.0.1:8080".to_string()).await; 
+    serve(router, "127.0.0.1:8080").await; 
 
 }

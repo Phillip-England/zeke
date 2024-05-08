@@ -1,7 +1,7 @@
 #!/bin/bash
 
 total_requests=10000
-concurrent_requests=200
+concurrent_requests=10
 
 start_time=$(date +%s)  # Capture start time in seconds
 

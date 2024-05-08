@@ -83,7 +83,7 @@ pub fn mw_trace_log_request() -> MiddlewareMutex {
         }
         let trace: HttpTrace = serde_json::from_str(&mw_trace).unwrap();
         let elapsed_time = trace.get_time_elapsed();
-        let log_message = format!("[{}] - [{}] - [{}]", request.method, request.path, elapsed_time);
+        let log_message = format!("[{}]-[{}]-[{}]", request.method, request.path, elapsed_time);
         println!("{}", log_message);
 
         return None;

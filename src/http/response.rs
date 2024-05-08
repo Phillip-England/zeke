@@ -7,23 +7,45 @@ pub type PotentialResponse = Option<Response>;
 pub struct Response {
     pub status: u16,
     pub body: String,
+    pub headers: ResponseHeaders,
 }
 pub type ResponseBytes = Vec<u8>;
+
+pub type ResponseHeaders = Vec<(String, String)>;
 
 pub fn new_response(status: u16, body: String) -> Response {
     Response {
         status,
         body,
+        headers: vec![],
     }
 }
 
-pub fn to_bytes(response: Response) -> ResponseBytes {
-    format!("HTTP/1.1 {}\r\n\r\n{}", response.status, response.body).into_bytes()
+pub fn to_bytes(response: Response) -> Vec<u8> {
+    let mut header_string = String::new(); // Mutable string to accumulate headers
+    for header in response.headers {
+        header_string.push_str(&format!("{}: {}\r\n", header.0, header.1));
+    }
+    // Now create the full response with status line, headers, and body
+    let full_response = format!(
+        "HTTP/1.1 {}\r\n{}Content-Length: {}\r\n\r\n{}",
+        response.status, 
+        header_string,
+        response.body.len(), // This assumes 'body' is a String or similar
+        response.body
+    );
+    full_response.into_bytes() // Convert the full response string to bytes
+}
+
+pub fn set_header(mut response: Response, key: String, value: String) -> Response {
+    response.headers.push((key, value));
+    return response;
 }
 
 pub fn not_found() -> Response {
     Response {
         status: 404,
         body: "Not Found".to_string(),
+        headers: vec![],
     }
 }

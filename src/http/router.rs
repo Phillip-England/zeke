@@ -26,8 +26,8 @@ pub fn add_route(mut router: Router, route: Route) -> Router {
     return router;
 }
 
-pub async fn serve(router: Router, addr: String) -> Option<Error> {
-    let listener = tokio::net::TcpListener::bind(addr).await;
+pub async fn serve(router: Router, addr: &str) -> Option<Error> {
+    let listener = tokio::net::TcpListener::bind(&addr).await;
     let router: Arc<Router> = Arc::new(router);
     match listener {
         Ok(ref listener) => {
