@@ -7,6 +7,7 @@ use serde_json; // Add this line to import the serde_json crate
 
 pub type RequestBuffer = [u8; 1024];
 pub type RequestContext = HashMap<String, String>;
+pub type RequestContextKey = String;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Request {
