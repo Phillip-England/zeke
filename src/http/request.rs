@@ -39,7 +39,7 @@ pub fn parse(mut request: Request, buffer: RequestBuffer) -> (Request, Option<Re
     let request_string = String::from_utf8(buffer[..end].to_vec());
     match request_string {
         Err(_) => {
-            return (request, Some(new_response(500, "failed to parse request using from_utf8".to_string())));
+            return (request, Some(new_response(500, "failed to parse request using from_utf8")));
         }
         Ok(request_string) => {
             let lines: Vec<&str> = request_string.lines().collect();
@@ -49,7 +49,7 @@ pub fn parse(mut request: Request, buffer: RequestBuffer) -> (Request, Option<Re
                 if i == 0 {
                     let parts = line.split(" ").collect::<Vec<&str>>();
                     if parts.len() != 3 {
-                        return (request, Some(new_response(500, "request did not have 3 parts: {method} {path} {protocol}".to_string())));
+                        return (request, Some(new_response(500, "request did not have 3 parts: {method} {path} {protocol}")));
                     }
                     let method = parts[0];
                     let path = parts[1];
@@ -84,8 +84,6 @@ pub fn parse(mut request: Request, buffer: RequestBuffer) -> (Request, Option<Re
     }
 }
 
-/// Get a header from a request.
-/// Returns an empty string if header does not exist
 pub fn get_header(request: Request, key: &str) -> (Request, String) {
     let mut header = "".to_string();
     match request.headers.get(key) {

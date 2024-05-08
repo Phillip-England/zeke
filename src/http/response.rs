@@ -13,10 +13,10 @@ pub type ResponseBytes = Vec<u8>;
 
 pub type ResponseHeaders = Vec<(String, String)>;
 
-pub fn new_response(status: u16, body: String) -> Response {
+pub fn new_response(status: u16, body: &str) -> Response {
     Response {
-        status,
-        body,
+        status: status,
+        body: body.to_string(),
         headers: vec![],
     }
 }
@@ -37,8 +37,8 @@ pub fn to_bytes(response: Response) -> Vec<u8> {
     full_response.into_bytes() // Convert the full response string to bytes
 }
 
-pub fn set_header(mut response: Response, key: String, value: String) -> Response {
-    response.headers.push((key, value));
+pub fn set_header(mut response: Response, key: &str, value: &str) -> Response {
+    response.headers.push((key.to_string(), value.to_string()));
     return response;
 }
 

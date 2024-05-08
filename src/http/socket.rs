@@ -60,7 +60,7 @@ pub async fn handle_connection(socket: TcpStream, router: Arc<Router>) -> (TcpSt
         None => {
             if request_bytes.len() == 0 {
                 // TODO: should this be a 500?
-                return (socket, new_response(500, "read 0 bytes from client connection".to_string()));
+                return (socket, new_response(500, "read 0 bytes from client connection"));
             }
             let (request, potential_response) = new_request(request_bytes);
             match potential_response {
@@ -74,7 +74,7 @@ pub async fn handle_connection(socket: TcpStream, router: Arc<Router>) -> (TcpSt
                             return (socket, response);
                         },
                         None => {
-                            return (socket, new_response(500, "failed to handle request".to_string()));
+                            return (socket, new_response(500, "failed to handle request"));
                         },
                     }
                 },
@@ -112,7 +112,7 @@ pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialR
                                     }
                                 }
                                 Err(_) => {
-                                    return Some(new_response(500, "failed to lock handler".to_string()));
+                                    return Some(new_response(500, "failed to lock handler"));
                                 }
                             }
                         },
@@ -121,7 +121,7 @@ pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialR
                 // PoisonError is a type of error that occurs when a Mutex is poisoned
                 // TODO: set up logging for when a Mutex is poisoned
                 Err(_poision_error) => {
-                    return Some(new_response(500, "failed to lock route handler".to_string()));
+                    return Some(new_response(500, "failed to lock route handler"));
                 },
             }
         },
@@ -153,7 +153,7 @@ pub fn handle_middleware(mut request: Request, middlewares: Middlewares) -> (Req
             // we had a posion error when trying to lock the middleware
             Err(_) => {
                 // TODO: set up logging for when a middleware is poisoned
-                return (request, Some(new_response(500, "failed to lock middleware".to_string())));
+                return (request, Some(new_response(500, "failed to lock middleware")));
             },
         }
     }
@@ -169,15 +169,15 @@ pub async fn read_socket(mut socket: TcpStream) -> (TcpStream, RequestBuffer, Po
         },
         Ok(Ok(_)) => {
             // No data read, potentially a graceful close
-            return (socket, buffer, Some(new_response(400, "No data received".to_string())));
+            return (socket, buffer, Some(new_response(400, "No data received")));
         },
         Ok(Err(e)) => {
             // Handle specific I/O errors if needed
-            return (socket, buffer, Some(new_response(500, format!("Error reading socket: {}", e))));
+            return (socket, buffer, Some(new_response(500, &format!("Error reading socket: {}", e))));
         },
         Err(_) => {
             // Timeout
-            return (socket, buffer, Some(new_response(408, "Read timeout".to_string())));
+            return (socket, buffer, Some(new_response(408, "Read timeout")));
         },
     }
 }
@@ -189,11 +189,11 @@ pub async fn write_socket(mut socket: TcpStream, response_bytes: &[u8]) -> (TcpS
         },
         Ok(Err(e)) => {
             // TODO: set up logging
-            return (socket, Some(new_response(500, format!("Failed to write to socket: {}", e))));
+            return (socket, Some(new_response(500, &format!("Failed to write to socket: {}", e))));
         },
         Err(_) => {
             // Timeout
-            return (socket, Some(new_response(408, "Write timeout".to_string())));
+            return (socket, Some(new_response(408, "Write timeout")));
         },
     }
 }
