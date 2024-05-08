@@ -1,159 +1,199 @@
-use std::{ sync::{Arc, Mutex}, time::Duration};
+use std::time::Duration;
+use std::sync::{Arc, Mutex, PoisonError, MutexGuard};
 
 use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::{TcpListener, TcpStream}, time::timeout};
 
-use crate::http::router::{Middlewares, Router};
-use crate::http::response::to_bytes;
-use crate::http::response::new_response;
-use crate::http::response::not_found;
-use crate::http::response::Response;
-use crate::http::request::RequestBuffer;
-use crate::http::request::Request;
-use crate::http::request::new_request;
+use crate::http::router::{Router, RouteHandler};
+use crate::http::middleware::{Middlewares, Middleware};
+use crate::http::response::{to_bytes, new_response, not_found, Response, ResponseBytes, PotentialResponse};
+use crate::http::request::{Request, new_request, RequestBuffer};
+use crate::http::handler::{HandlerMutex, Handler};
 
 
 
 
 
-pub async fn connect(listener: &TcpListener, router: Arc<Router>) {
-	let (socket, _) = listener.accept().await.unwrap(); // TODO: unwrap
-	tokio::spawn(async move {
-        let (socket, potential_response) = handle_connection(socket, router).await;
-        match potential_response {
-            Some(response) => {
-                let response_bytes = to_bytes(response);
-                let socket = write_socket(socket, &response_bytes).await;
-            },
-            None => {
-                return
-            },
-        }
-    });
+pub async fn connect_socket(listener: &TcpListener, router: Arc<Router>) {
+	let socket_result = listener.accept().await;
+    match socket_result {
+        Ok(socket_result) => {
+            let (socket, _addr) = socket_result;
+            tokio::spawn(async move {
+                let (socket, response) = handle_connection(socket, router).await;
+                let response_bytes: ResponseBytes = to_bytes(response);
+                let (mut socket, write_result) = write_socket(socket, &response_bytes).await;
+                match write_result {
+                    Some(response) => {
+                        // TODO: set up logging when writes fail
+                        println!("failed to write to socket: {:?}", response);
+                    },
+                    None => {
+                        // proceed to shutdown
+                    },
+                }
+                let shutdown_result = socket.shutdown().await;
+                match shutdown_result {
+                    Ok(_) => {
+                        return;
+                    },
+                    Err(e) => {
+                        // TODO: set up logging when shutdown fails
+                        // TODO: search up the implications of shutdown failure
+                    }
+                };
+            });
+        },
+        Err(_) => {
+            // TODO: Set up logging for when connecting to socket fails
+            return;
+        },
+    }
+
 }
 
-pub async fn handle_connection(socket: TcpStream, router: Arc<Router>) -> (TcpStream, Option<Response>) {
-    let (socket, request_bytes, potetial_response)  = read_socket(socket).await;
-    if request_bytes.len() == 0 {
-        return (socket, None::<Response>); // TODO: return a response from here
-    }
-    let request = new_request(request_bytes);
-    match request {
-        Some(request) => {
-            let potential_response = handle_request(router, request).await;
-            if potential_response.is_some() {
-                return (socket, potential_response);
-            }
-            // TODO: return a 500 ISE response from here
-            // this means that the request was not handled by the router
-            return (socket, None);
+pub async fn handle_connection(socket: TcpStream, router: Arc<Router>) -> (TcpStream, Response) {
+    let (socket, request_bytes, potetial_response) = read_socket(socket).await;
+    match potetial_response {
+        Some(response) => {
+            return (socket, response);
         },
         None => {
-            return (socket, None);
+            if request_bytes.len() == 0 {
+                // TODO: should this be a 500?
+                return (socket, new_response(500, "read 0 bytes from client connection"));
+            }
+            let (request, potential_response) = new_request(request_bytes);
+            match potential_response {
+                Some(response) => {
+                    return (socket, response);
+                },
+                None => {
+                    let potential_response: PotentialResponse = handle_request(router, request).await;
+                    match potential_response {
+                        Some(response) => {
+                            return (socket, response);
+                        },
+                        None => {
+                            return (socket, new_response(500, "failed to handle request"));
+                        },
+                    }
+                },
+            }
         },
-        
     }
 }
 
-pub async fn handle_request(router: Arc<Router>, request: Request) -> Option<Response> {
-    let route = router.get(request.method_and_path.as_str());
-    match route {
-        Some(route) => {
-            let potential_route = route.lock();
+pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialResponse {
+    let route_handler: Option<&Arc<Mutex<RouteHandler>>> = router.get(request.method_and_path.as_str());
+    match route_handler {
+        Some(route_handler) => {
+            let potential_route: Result<MutexGuard<(HandlerMutex, Middlewares, Middlewares)>, PoisonError<MutexGuard<(HandlerMutex, Middlewares, Middlewares)>>> = route_handler.lock();
             match potential_route {
                 Ok(route_handler) => {
-                    let (handler, middlewares) = &*route_handler;
+                    let (handler, middlewares, outerwares) = &*route_handler;
                     let (request, potential_response) = handle_middleware(request, middlewares.to_vec());
                     match potential_response {
                         Some(response) => {
                             return Some(response);
                         },
                         None => {
-                            let response = handler(request);
-                            return Some(response);
+                            let handler: Result<MutexGuard<Handler>, PoisonError<MutexGuard<Handler>>> = handler.lock();
+                            match handler {
+                                Ok(handler) => {
+                                    let (request, handler_response) = handler(request);
+                                    let (_, potential_response) = handle_middleware(request, outerwares.to_vec());
+                                    match potential_response {
+                                        Some(response) => {
+                                            return Some(response);
+                                        },
+                                        None => {
+                                            return Some(handler_response);
+                                        },
+                                    }
+                                }
+                                Err(_) => {
+                                    return Some(new_response(500, "failed to lock handler"));
+                                }
+                            }
                         },
                     }
                 },  
-                Err(_) => {
-                    None // TODO: return a response from here
+                // PoisonError is a type of error that occurs when a Mutex is poisoned
+                // TODO: set up logging for when a Mutex is poisoned
+                Err(_poision_error) => {
+                    return Some(new_response(500, "failed to lock route handler"));
                 },
             }
         },
         None => {
-            let response = not_found();
-            return Some(response);
+            return Some(not_found());
         },
     }
 
 }
 
-
-pub fn handle_middleware(request: Request, middlewares: Middlewares) -> (Request, Option<Response>) {
+pub fn handle_middleware(mut request: Request, middlewares: Middlewares) -> (Request, PotentialResponse) {
     if middlewares.len() == 0 {
         return (request, None);
     };
     for middleware in middlewares {
-        let middleware = middleware.lock();
+        let middleware: Result<MutexGuard<Middleware>, PoisonError<MutexGuard<Middleware>>> = middleware.lock();
         match middleware {
             Ok(middleware) => {
-                let (request, potential_response) = middleware(request);
-                return (request, potential_response);
+                let potential_response = middleware(&mut request);
+                match potential_response {
+                    Some(response) => {
+                        return (request, Some(response));
+                    },
+                    None => {
+                        continue;
+                    }
+                }
             },
+            // we had a posion error when trying to lock the middleware
             Err(_) => {
-                continue
+                // TODO: set up logging for when a middleware is poisoned
+                return (request, Some(new_response(500, "failed to lock middleware")));
             },
         }
     }
     return (request, None);
 }
 
-pub async fn read_socket(mut socket: TcpStream) -> (TcpStream, RequestBuffer, Option<Response>) {
-	let mut buffer: [u8; 1024] = [0; 1024];
-	let read_timeout = timeout(Duration::from_secs(5), socket.read(&mut buffer)).await;
-	match read_timeout {
-		Ok(Ok(_number_of_bytes)) => {
-			return (socket, buffer, None);
-		},
-		// unable to read from socket
-        Ok(Err(e)) => {
-            for _ in 0..5 {
-                let response = new_response(500, "Internal Server Error".to_string());
-                let response_bytes = to_bytes(response);
-                let result = socket.write_all(&response_bytes).await;
-                match result {
-                    Ok(_) => {
-                        return (socket, buffer, None);
-                    },
-                    Err(_) => {
-                        continue;
-                    },
-                }
-            }
+pub async fn read_socket(mut socket: TcpStream) -> (TcpStream, RequestBuffer, PotentialResponse) {
+    let mut buffer: [u8; 1024] = [0; 1024];
+    match timeout(Duration::from_secs(5), socket.read(&mut buffer)).await {
+        Ok(Ok(bytes_read)) if bytes_read > 0 => {
+            // TODO: trunacate() and keep only what was read?
             return (socket, buffer, None);
         },
-		// read timed out
-        Err(_) => {
-            let response = new_response(408, "Request Timeout".to_string());
-            return (socket, buffer, Some(response));
+        Ok(Ok(_)) => {
+            // No data read, potentially a graceful close
+            return (socket, buffer, Some(new_response(400, "No data received")));
         },
-	}
+        Ok(Err(e)) => {
+            // Handle specific I/O errors if needed
+            return (socket, buffer, Some(new_response(500, &format!("Error reading socket: {}", e))));
+        },
+        Err(_) => {
+            // Timeout
+            return (socket, buffer, Some(new_response(408, "Read timeout")));
+        },
+    }
 }
 
-pub async fn write_socket(mut socket: TcpStream, response: &[u8]) -> (TcpStream, Option<Response>) {
-	let write_timeout = timeout(Duration::from_secs(5), socket.write_all(response)).await;
-    match write_timeout {
-		Ok(Ok(_)) => {
-			return (socket, None);
-		},
-        // unable to write to socket
-        Ok(Err(e)) => {
-            // TODO: make number of failed attempts configurable
-            let response = new_response(500, "Internal Server Error".to_string());
-            return (socket, Some(response));
+pub async fn write_socket(mut socket: TcpStream, response_bytes: &[u8]) -> (TcpStream, PotentialResponse) {
+    match timeout(Duration::from_secs(5), socket.write_all(response_bytes)).await {
+        Ok(Ok(_)) => {
+            return (socket, None);
         },
-        // write timed out
-		Err(_) => {
-            let response = new_response(408, "Request Timeout".to_string());
-            return (socket, Some(response))
-		},
-	}
+        Ok(Err(e)) => {
+            // TODO: set up logging
+            return (socket, Some(new_response(500, &format!("Failed to write to socket: {}", e))));
+        },
+        Err(_) => {
+            // Timeout
+            return (socket, Some(new_response(408, "Write timeout")));
+        },
+    }
 }

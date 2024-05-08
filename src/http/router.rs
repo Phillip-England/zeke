@@ -1,51 +1,45 @@
 use std::{collections::HashMap, sync::{Arc, Mutex}};
+use std::io::Error;
 
-use crate::http::response::Response;
-use crate::http::request::Request;
+use crate::http::middleware::Middlewares;
+use crate::http::handler::HandlerMutex;
+use crate::http::socket::connect_socket;
 
-pub type RouteHandler = (Handler, Middlewares);
-pub type RouteHandlerMutex = Arc<Mutex<RouteHandler>>;
+pub type RouteHandler = (HandlerMutex, Middlewares, Middlewares);
 pub type Router = HashMap<&'static str, Arc<Mutex<RouteHandler>>>;
-
-pub type Middleware = Box<dyn Fn(Request) -> (Request, Option<Response>)  + Send + 'static>;
-
-pub type MiddlewareMutex = Arc<Mutex<Middleware>>;
-pub type Middlewares = Vec<MiddlewareMutex>;
+pub struct Route {
+    pub path: &'static str,
+    pub handler: HandlerMutex,
+    pub middlewares: Middlewares,
+    pub outerwares: Middlewares,
+}
 
 pub fn new_router() -> Router {
 	let router: Router = HashMap::new();
 	return router
 }
 
-pub fn insert(router: &mut Router, path: &'static str, handler: Handler, middlewares: Middlewares) {
-	let handler: RouteHandler = (handler, middlewares);
+pub fn add_route(mut router: Router, route: Route) -> Router {
+	let handler: RouteHandler = (route.handler, route.middlewares, route.outerwares);
     let handler_mutex = Arc::new(Mutex::new(handler));
-	router.insert(path, handler_mutex);
+	router.insert(route.path, handler_mutex);
+    return router;
 }
 
-pub type Handler = Box<dyn Fn(Request) -> Response + Send + 'static>;
-
-pub fn new_handler<F>(f: F) -> Handler
-where
-    F: Fn(Request) -> Response + Send + 'static,
-{
-    Box::new(f)
+pub async fn serve(router: Router, addr: &str) -> Option<Error> {
+    let listener = tokio::net::TcpListener::bind(&addr).await;
+    let router: Arc<Router> = Arc::new(router);
+    match listener {
+        Ok(ref listener) => {
+            loop {
+                let router: Arc<Router> = Arc::clone(&router); // TODO: is cloning the router bad?
+                connect_socket(listener, router).await; 
+            }
+        },
+        Err(e) => {
+			return Some(e);
+        },
+    }
 }
 
 
-pub fn new_middleware<F>(f: F) -> MiddlewareMutex
-where
-	F: Fn(Request) -> (Request, Option<Response>) + Send + 'static,
-{
-	Arc::new(Mutex::new(Box::new(f)))
-}
-
-pub fn test_middleware() -> MiddlewareMutex {
-	new_middleware(|request: Request| {
-		let response = Some(Response {
-			status: 200,
-			body: "Hello, Middleware!".to_string(),
-		});
-        return (request, response);
-	})
-}
