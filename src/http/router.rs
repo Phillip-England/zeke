@@ -54,7 +54,7 @@ pub struct Route {
 
 impl Route {
     pub fn new(path: &'static str, handler: Handler) -> Route {
-        let mut route = Route{
+        let route = Route{
             path: path,
             handler: handler,
             middlewares: vec![],

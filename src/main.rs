@@ -2,10 +2,8 @@
 
 mod http;
 
-use std::sync::Arc;
-
 use http::router::{Router, Route};
-use http::handler::{Handler, new_handler};
+use http::handler::Handler;
 use http::response::{new_response, set_header};
 use http::middleware::{new_middleware, MiddlewareMutex, HttpTrace};
 use http::request::{extract_context_str, set_context, RequestContextKey};
@@ -16,8 +14,8 @@ async fn main() {
 
 	let mut r = Router::new();
 
-    let handle_hello_world: Handler = new_handler(|request| {
-        let response = new_response(200, "<h1>Hello, World!</h1>");
+    let handle_home: Handler = Handler::new(|request| {
+        let response = new_response(200, "<h1>Home</h1>");
         let response = set_header(response, "Content-Type", "text/html");
         return (request, response);
     });
@@ -57,7 +55,7 @@ async fn main() {
         });
     }
 
-    r.add(Route::new("GET /", handle_hello_world)
+    r.add(Route::new("GET /", handle_home)
         .middleware(mw_trace())
         .outerware(mw_trace_log())
     );
