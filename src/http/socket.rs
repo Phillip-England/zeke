@@ -97,23 +97,16 @@ pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialR
                             return Some(response);
                         },
                         None => {
-                            let handler: Result<MutexGuard<HandlerFunc>, PoisonError<MutexGuard<Handler>>> = Ok(handler.func.lock().await); // TODO: need to handle this ok() better
-                            match handler {
-                                Ok(handler) => {
-                                    let (request, handler_response) = handler(request);
-                                    let (_, potential_response) = handle_middleware(request, outerwares.to_vec()).await;
-                                    match potential_response {
-                                        Some(response) => {
-                                            return Some(response);
-                                        },
-                                        None => {
-                                            return Some(handler_response);
-                                        },
-                                    }
-                                }
-                                Err(_) => {
-                                    return Some(new_response(500, "failed to lock handler"));
-                                }
+                            let handler = handler.func.lock().await; // TODO: need to handle this ok() better
+                            let (request, handler_response) = handler(request);
+                            let (_, potential_response) = handle_middleware(request, outerwares.to_vec()).await;
+                            match potential_response {
+                                Some(response) => {
+                                    return Some(response);
+                                },
+                                None => {
+                                    return Some(handler_response);
+                                },
                             }
                         },
                     }
