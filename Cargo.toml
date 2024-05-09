@@ -1,7 +1,10 @@
 [package]
-name = "rust-http-quickstart"
+name = "zeke"
 version = "0.1.0"
 edition = "2021"
+authors = ["Phillip England <phillip.mark.england@gmail.com>"]
+description = "A Backend Rust HTTP Framework Built on Tokio"
+license = "MIT"
 
 [dependencies]
 tokio = { version = "1.37.0", features = ["full"] }
