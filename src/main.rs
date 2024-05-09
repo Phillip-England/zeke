@@ -4,7 +4,7 @@ mod http;
 
 use std::sync::Arc;
 
-use http::router::{Router, Route, new_router, add_route, serve};
+use http::router::{Router, Route, serve};
 use http::handler::{HandlerMutex, new_handler};
 use http::response::{new_response, set_header};
 use http::middleware::{new_middleware, MiddlewareMutex, HttpTrace};
@@ -14,7 +14,7 @@ use http::request::{extract_context_str, set_context, RequestContextKey};
 async fn main() {
 
 
-	let router: Router = new_router();
+	let mut router = Router::new();
 
     let handle_hello_world: HandlerMutex = new_handler(|request| {
         let response = new_response(200, "<h1>Hello, World!</h1>");
@@ -57,8 +57,8 @@ async fn main() {
         });
     }
 
-    let router = add_route(router, Route {
-        path: "GET /",
+    router.add_route(Route {
+        path: "GET /hello",
         handler: Arc::clone(&handle_hello_world),
         middlewares: vec![mw_trace_init()],
         outerwares: vec![mw_trace_log_request()],

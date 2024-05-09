@@ -84,7 +84,7 @@ pub async fn handle_connection(socket: TcpStream, router: Arc<Router>) -> (TcpSt
 }
 
 pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialResponse {
-    let route_handler: Option<&Arc<Mutex<RouteHandler>>> = router.get(request.method_and_path.as_str());
+    let route_handler: Option<&Arc<Mutex<RouteHandler>>> = router.routes.get(request.method_and_path.as_str());
     match route_handler {
         Some(route_handler) => {
             let potential_route: Result<MutexGuard<(HandlerMutex, Middlewares, Middlewares)>, PoisonError<MutexGuard<(HandlerMutex, Middlewares, Middlewares)>>> = route_handler.lock();
