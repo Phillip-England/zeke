@@ -4,7 +4,7 @@ mod http;
 
 use std::sync::Arc;
 
-use http::router::{Router, Route, serve};
+use http::router::{Router, Route};
 use http::handler::{HandlerMutex, new_handler};
 use http::response::{new_response, set_header};
 use http::middleware::{new_middleware, MiddlewareMutex, HttpTrace};
@@ -58,7 +58,7 @@ async fn main() {
     }
 
     router.add_route(Route {
-        path: "GET /hello",
+        path: "GET /",
         handler: Arc::clone(&handle_hello_world),
         middlewares: vec![mw_trace_init()],
         outerwares: vec![mw_trace_log_request()],
@@ -66,7 +66,7 @@ async fn main() {
 
     
     // TODO: convert types to &str if possible
-    serve(router, "127.0.0.1:8080").await; 
+    router.serve("127.0.0.1:8080").await;
 
 
 }

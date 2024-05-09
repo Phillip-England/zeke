@@ -1,6 +1,7 @@
 use std::{collections::HashMap, sync::{Arc, Mutex}};
 use std::io::Error;
 
+
 use crate::http::middleware::Middlewares;
 use crate::http::handler::HandlerMutex;
 use crate::http::socket::connect_socket;
@@ -19,10 +20,26 @@ impl Router {
             routes: HashMap::new(),
         }
     }
-    pub fn add_route(self: &mut Router, route: Route) {
+    pub fn add_route(self: &mut Router, route: Route) -> &mut Router {
         let handler: RouteHandler = (route.handler, route.middlewares, route.outerwares);
         let handler_mutex = Arc::new(Mutex::new(handler));
         self.routes.insert(route.path, handler_mutex);
+        return self;
+    }
+    pub async fn serve(self: Router, addr: &str) -> Option<Error> {
+        let listener = tokio::net::TcpListener::bind(&addr).await;
+        let router: Arc<Router> = Arc::new(self);
+        match listener {
+            Ok(ref listener) => {
+                loop {
+                    let router: Arc<Router> = Arc::clone(&router); // TODO: is cloning the router bad?
+                    connect_socket(listener, router).await; 
+                }
+            },
+            Err(e) => {
+                return Some(e);
+            },
+        }
     }
 }
 
@@ -35,20 +52,6 @@ pub struct Route {
 
 
 
-pub async fn serve(router: Router, addr: &str) -> Option<Error> {
-    let listener = tokio::net::TcpListener::bind(&addr).await;
-    let router: Arc<Router> = Arc::new(router);
-    match listener {
-        Ok(ref listener) => {
-            loop {
-                let router: Arc<Router> = Arc::clone(&router); // TODO: is cloning the router bad?
-                connect_socket(listener, router).await; 
-            }
-        },
-        Err(e) => {
-			return Some(e);
-        },
-    }
-}
+
 
 
