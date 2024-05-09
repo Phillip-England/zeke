@@ -5,13 +5,13 @@ use tokio::sync::Mutex;
 
 
 use crate::http::middleware::{Middlewares, MiddlewareMutex, MiddlewareGroup};
-use crate::http::handler::Handler;
+use crate::http::handler::{ArcHandler, Handler};
 use crate::http::socket::connect_socket;
 
 use super::middleware;
 
 
-pub type RouteHandler = (Handler, Middlewares, Middlewares);
+pub type RouteHandler = (ArcHandler, Middlewares, Middlewares);
 
 pub type Routes = HashMap<&'static str, Arc<Mutex<RouteHandler>>>;
 
@@ -50,13 +50,13 @@ impl Router {
 
 pub struct Route {
     pub path: &'static str,
-    pub handler: Handler,
+    pub handler: ArcHandler,
     pub middlewares: Middlewares,
     pub outerwares: Middlewares,
 }
 
 impl Route {
-    pub fn new(path: &'static str, handler: Handler) -> Route {
+    pub fn new(path: &'static str, handler: ArcHandler) -> Route {
         let route = Route{
             path: path,
             handler: handler,
