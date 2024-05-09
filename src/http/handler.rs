@@ -6,10 +6,10 @@ use std::sync::Arc;
 use crate::http::request::Request;
 use crate::http::response::Response;
 
-pub type Handler = Box<dyn Fn(Request) -> (Request, Response) + Send + 'static>;
-pub type HandlerMutex = Arc<Mutex<Box<dyn Fn(Request) -> (Request, Response) + Send + 'static>>>;
+pub type HandlerFunc = Box<dyn Fn(Request) -> (Request, Response) + Send + 'static>;
+pub type Handler = Arc<Mutex<Box<dyn Fn(Request) -> (Request, Response) + Send + 'static>>>;
 
-pub fn new_handler<F>(f: F) -> HandlerMutex
+pub fn new_handler<F>(f: F) -> Handler
 where
     F: Fn(Request) -> (Request, Response) + Send + 'static,
 {
