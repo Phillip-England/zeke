@@ -14,7 +14,7 @@ use http::request::{extract_context_str, set_context, RequestContextKey};
 async fn main() {
 
 
-	let mut router = Router::new();
+	let mut r = Router::new();
 
     let handle_hello_world: HandlerMutex = new_handler(|request| {
         let response = new_response(200, "<h1>Hello, World!</h1>");
@@ -24,7 +24,7 @@ async fn main() {
 
     pub const KEY_TRACE: &RequestContextKey = "TRACE";
 
-    pub fn mw_trace_init() -> MiddlewareMutex {
+    pub fn mw_trace() -> MiddlewareMutex {
         return new_middleware(|request| {
             let trace = HttpTrace{
                 time_stamp: chrono::Utc::now().to_rfc3339(),
@@ -42,7 +42,7 @@ async fn main() {
         });
     }
     
-    pub fn mw_trace_log_request() -> MiddlewareMutex {
+    pub fn mw_trace_log() -> MiddlewareMutex {
         return new_middleware(|request| {
             let mw_trace = extract_context_str(&request.context, KEY_TRACE.to_string());
             if mw_trace == "" {
@@ -50,23 +50,30 @@ async fn main() {
             }
             let trace: HttpTrace = serde_json::from_str(&mw_trace).unwrap();
             let elapsed_time = trace.get_time_elapsed();
-            let log_message = format!("[{}]-[{}]-[{}]", request.method, request.path, elapsed_time);
+            let log_message = format!("[{}][{}][{}]", request.method, request.path, elapsed_time);
             println!("{}", log_message);
     
             return None;
         });
     }
 
-    router.add_route(Route {
-        path: "GET /",
-        handler: Arc::clone(&handle_hello_world),
-        middlewares: vec![mw_trace_init()],
-        outerwares: vec![mw_trace_log_request()],
-    });
+    r.add(Route::new("GET /", handle_hello_world)
+        .middleware(mw_trace())
+        .outerware(mw_trace_log())
+    );
 
     
     // TODO: convert types to &str if possible
-    router.serve("127.0.0.1:8080").await;
+    let err = r.serve("127.0.0.1:8080").await;
+    match err {
+        Some(e) => {
+            println!("Error: {:?}", e);
+        },
+        None => {
+            println!("Server closed");
+        },
+    }
+
 
 
 }

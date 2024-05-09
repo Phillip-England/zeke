@@ -1,13 +1,13 @@
 
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::http::request::{Request, RequestContextKey};
-use crate::http::response::{new_response, Response};
+use crate::http::request::Request;
+use crate::http::response::Response;
 
-use super::request::{extract_context_str, set_context};
 
 pub type Middleware = Box<dyn Fn(&mut Request) -> Option<Response> + Send + 'static>;
 pub type MiddlewareMutex = Arc<Mutex<Middleware>>;

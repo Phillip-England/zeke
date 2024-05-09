@@ -1,8 +1,10 @@
-use std::{collections::HashMap, sync::{Arc, Mutex}};
+use std::{collections::HashMap, sync::Arc};
 use std::io::Error;
 
+use tokio::sync::Mutex;
 
-use crate::http::middleware::Middlewares;
+
+use crate::http::middleware::{Middlewares, MiddlewareMutex};
 use crate::http::handler::HandlerMutex;
 use crate::http::socket::connect_socket;
 
@@ -20,7 +22,7 @@ impl Router {
             routes: HashMap::new(),
         }
     }
-    pub fn add_route(self: &mut Router, route: Route) -> &mut Router {
+    pub fn add(self: &mut Router, route: Route) -> &mut Router {
         let handler: RouteHandler = (route.handler, route.middlewares, route.outerwares);
         let handler_mutex = Arc::new(Mutex::new(handler));
         self.routes.insert(route.path, handler_mutex);
@@ -48,6 +50,26 @@ pub struct Route {
     pub handler: HandlerMutex,
     pub middlewares: Middlewares,
     pub outerwares: Middlewares,
+}
+
+impl Route {
+    pub fn new(path: &'static str, handler: HandlerMutex) -> Route {
+        let mut route = Route{
+            path: path,
+            handler: handler,
+            middlewares: vec![],
+            outerwares: vec![],
+        };
+        return route;
+    }
+    pub fn middleware(mut self: Route, middleware: MiddlewareMutex) -> Self {
+        self.middlewares.push(middleware);
+        return self;
+    }
+    pub fn outerware(mut self: Route, outerware: MiddlewareMutex) -> Self {
+        self.outerwares.push(outerware);
+        return self;
+    }
 }
 
 

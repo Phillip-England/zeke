@@ -1,5 +1,7 @@
 
-use std::sync::{Arc, Mutex};
+use tokio::sync::Mutex;
+use std::sync::Arc;
+
 
 use crate::http::request::Request;
 use crate::http::response::Response;

@@ -1,7 +1,7 @@
 use std::time::Duration;
-use std::sync::{Arc, Mutex, PoisonError, MutexGuard};
+use std::sync::{Arc, PoisonError};
 
-use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::{TcpListener, TcpStream}, time::timeout};
+use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::{TcpListener, TcpStream}, time::timeout, sync::{Mutex, MutexGuard}};
 
 use crate::http::router::{Router, RouteHandler};
 use crate::http::middleware::{Middlewares, Middleware};
@@ -87,21 +87,21 @@ pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialR
     let route_handler: Option<&Arc<Mutex<RouteHandler>>> = router.routes.get(request.method_and_path.as_str());
     match route_handler {
         Some(route_handler) => {
-            let potential_route: Result<MutexGuard<(HandlerMutex, Middlewares, Middlewares)>, PoisonError<MutexGuard<(HandlerMutex, Middlewares, Middlewares)>>> = route_handler.lock();
+            let potential_route: Result<MutexGuard<(HandlerMutex, Middlewares, Middlewares)>, PoisonError<MutexGuard<(HandlerMutex, Middlewares, Middlewares)>>> = Ok(route_handler.lock().await); // TODO: need to handle this ok() better
             match potential_route {
                 Ok(route_handler) => {
                     let (handler, middlewares, outerwares) = &*route_handler;
-                    let (request, potential_response) = handle_middleware(request, middlewares.to_vec());
+                    let (request, potential_response) = handle_middleware(request, middlewares.to_vec()).await;
                     match potential_response {
                         Some(response) => {
                             return Some(response);
                         },
                         None => {
-                            let handler: Result<MutexGuard<Handler>, PoisonError<MutexGuard<Handler>>> = handler.lock();
+                            let handler: Result<MutexGuard<Handler>, PoisonError<MutexGuard<Handler>>> = Ok(handler.lock().await); // TODO: need to handle this ok() better
                             match handler {
                                 Ok(handler) => {
                                     let (request, handler_response) = handler(request);
-                                    let (_, potential_response) = handle_middleware(request, outerwares.to_vec());
+                                    let (_, potential_response) = handle_middleware(request, outerwares.to_vec()).await;
                                     match potential_response {
                                         Some(response) => {
                                             return Some(response);
@@ -132,12 +132,12 @@ pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialR
 
 }
 
-pub fn handle_middleware(mut request: Request, middlewares: Middlewares) -> (Request, PotentialResponse) {
+pub async fn handle_middleware(mut request: Request, middlewares: Middlewares) -> (Request, PotentialResponse) {
     if middlewares.len() == 0 {
         return (request, None);
     };
     for middleware in middlewares {
-        let middleware: Result<MutexGuard<Middleware>, PoisonError<MutexGuard<Middleware>>> = middleware.lock();
+        let middleware: Result<MutexGuard<Middleware>, PoisonError<MutexGuard<Middleware>>> = Ok(middleware.lock().await); // TODO: need to handle this ok() better
         match middleware {
             Ok(middleware) => {
                 let potential_response = middleware(&mut request);
