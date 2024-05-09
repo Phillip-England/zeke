@@ -1,6 +1,6 @@
 [package]
 name = "zeke"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Phillip England <phillip.mark.england@gmail.com>"]
 description = "A Backend Rust HTTP Framework Built on Tokio"
