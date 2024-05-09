@@ -4,9 +4,12 @@ use std::io::Error;
 use tokio::sync::Mutex;
 
 
-use crate::http::middleware::{Middlewares, MiddlewareMutex};
+use crate::http::middleware::{Middlewares, MiddlewareMutex, MiddlewareGroup};
 use crate::http::handler::Handler;
 use crate::http::socket::connect_socket;
+
+use super::middleware;
+
 
 pub type RouteHandler = (Handler, Middlewares, Middlewares);
 
@@ -69,6 +72,24 @@ impl Route {
     pub fn outerware(mut self: Route, outerware: MiddlewareMutex) -> Self {
         self.outerwares.push(outerware);
         return self;
+    }
+    pub fn group(mut self: Route, middleware_group: MiddlewareGroup) -> Self {
+        for middleware in middleware_group.middlewares {
+            self.middlewares.push(middleware);
+        }
+        for outerware in middleware_group.outerwares {
+            self.outerwares.push(outerware);
+        }
+        return self;
+    }
+    pub fn clone(self: &Route) -> Route {
+        let route = Route{
+            path: self.path,
+            handler: self.handler.clone(),
+            middlewares: self.middlewares.clone(),
+            outerwares: self.outerwares.clone(),
+        };
+        return route;
     }
 }
 

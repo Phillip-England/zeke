@@ -13,6 +13,21 @@ pub type Middleware = Box<dyn Fn(&mut Request) -> Option<Response> + Send + 'sta
 pub type MiddlewareMutex = Arc<Mutex<Middleware>>;
 pub type Middlewares = Vec<MiddlewareMutex>;
 
+
+pub struct MiddlewareGroup {
+    pub middlewares: Middlewares,
+    pub outerwares: Middlewares,
+}
+
+impl MiddlewareGroup {
+    pub fn new(middlewares: Vec<MiddlewareMutex>, outerwares: Vec<MiddlewareMutex>) -> MiddlewareGroup {
+        return MiddlewareGroup {
+            middlewares: middlewares,
+            outerwares: outerwares,
+        };
+    }
+}
+
 pub fn new_middleware<F>(f: F) -> MiddlewareMutex
 where
 	F: Fn(&mut Request) -> Option<Response> + Send + 'static,

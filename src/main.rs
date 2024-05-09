@@ -5,7 +5,7 @@ mod http;
 use http::router::{Router, Route};
 use http::handler::Handler;
 use http::response::{new_response, set_header};
-use http::middleware::{new_middleware, MiddlewareMutex, HttpTrace};
+use http::middleware::{new_middleware, MiddlewareMutex, HttpTrace, MiddlewareGroup};
 use http::request::{extract_context_str, set_context, RequestContextKey};
 
 #[tokio::main]
@@ -60,7 +60,12 @@ async fn main() {
         .outerware(mw_trace_log())
     );
 
+    let mw_group_trace = MiddlewareGroup::new(vec![mw_trace()], vec![mw_trace_log()]);
     
+    r.add(Route::new("GET /about", handle_home)
+        .group(mw_group_trace)
+    );
+
     // TODO: convert types to &str if possible
     let err = r.serve("127.0.0.1:8080").await;
     match err {
