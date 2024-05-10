@@ -8,29 +8,15 @@ use serde::{Deserialize, Serialize};
 use crate::http::request::Request;
 use crate::http::response::Response;
 
-
-pub type Middleware = Box<dyn Fn(&mut Request) -> Option<Response> + Send + 'static>;
+pub type Middleware = dyn Fn(&mut Request) -> Option<Response> + Send + Sync + 'static;
 pub type MiddlewareMutex = Arc<Mutex<Middleware>>;
 pub type Middlewares = Vec<MiddlewareMutex>;
 
 
-pub struct MiddlewareGroup {
-    pub middlewares: Middlewares,
-    pub outerwares: Middlewares,
-}
 
-impl MiddlewareGroup {
-    pub fn new(middlewares: Vec<MiddlewareMutex>, outerwares: Vec<MiddlewareMutex>) -> MiddlewareGroup {
-        return MiddlewareGroup {
-            middlewares: middlewares,
-            outerwares: outerwares,
-        };
-    }
-}
-
-pub fn new_middleware<F>(f: F) -> MiddlewareMutex
+pub fn mw<F>(f: F) -> MiddlewareMutex
 where
-	F: Fn(&mut Request) -> Option<Response> + Send + 'static,
+	F: Fn(&mut Request) -> Option<Response> + Send + Sync + 'static,
 {
 	Arc::new(Mutex::new(Box::new(f)))    
 }
@@ -38,6 +24,18 @@ where
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HttpTrace {
     pub time_stamp: String,
+}
+
+pub struct MiddlewareGroup {
+    pub middlewares: Middlewares,
+    pub outerwares: Middlewares,
+}
+
+pub fn mw_group(middlewares: Vec<MiddlewareMutex>, outerwares: Vec<MiddlewareMutex>) -> MiddlewareGroup {
+    return MiddlewareGroup {
+        middlewares: middlewares,
+        outerwares: outerwares,
+    };
 }
 
 impl HttpTrace {

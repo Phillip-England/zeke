@@ -2,11 +2,10 @@ use std::{collections::HashMap, fmt::Debug};
 use serde::{Serialize, Deserialize};
 
 use crate::http::response::{new_response, Response};
+use crate::http::context::Context;
 
 
 pub type RequestBuffer = [u8; 1024];
-pub type RequestContext = HashMap<String, String>;
-pub type RequestContextKey = str;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Request {
@@ -16,7 +15,7 @@ pub struct Request {
     pub protocol: String,
     pub body: String,
     pub headers: HashMap<String, String>,
-    pub context: RequestContext,
+    pub context: Context,
 }
 
 pub fn new_request(buffer: RequestBuffer) -> (Request, Option<Response>) {
@@ -95,19 +94,5 @@ pub fn get_header(request: Request, key: &str) -> (Request, String) {
     }
     return (request, header);
 }
-pub fn set_context(request: &mut Request, key: String, value: String) {
-    request.context.insert(key, value);
-}
 
-pub fn extract_context_str(context: &RequestContext, key: String) -> String {
-    let result = context.get(&key);
-    match result {
-        Some(str) => {
-            return str.to_string();
-        },
-        None => {
-            return "".to_string();
-        }
-    }
-}
 

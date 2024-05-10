@@ -5,15 +5,13 @@ use tokio::sync::Mutex;
 
 
 use crate::http::middleware::{Middlewares, MiddlewareMutex, MiddlewareGroup};
-use crate::http::handler::{ArcHandler, Handler};
+use crate::http::handler::ArcHandler;
 use crate::http::socket::connect_socket;
-
-use super::middleware;
-
 
 pub type RouteHandler = (ArcHandler, Middlewares, Middlewares);
 
 pub type Routes = HashMap<&'static str, Arc<Mutex<RouteHandler>>>;
+
 
 pub struct Router {
     pub routes: Routes,

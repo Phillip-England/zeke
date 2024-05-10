@@ -1,14 +1,14 @@
 
 
-mod http;
-
 use std::sync::Arc;
 
-use http::router::{Router, Route};
-use http::handler::{Handler, ArcHandler};
-use http::response::{new_response, set_header};
-use http::middleware::{new_middleware, MiddlewareMutex, HttpTrace, MiddlewareGroup};
-use http::request::{extract_context_str, set_context, RequestContextKey};
+use zeke::http::{
+    router::{Router, Route},
+    handler::{Handler, ArcHandler},
+    response::{new_response, set_header},
+    middleware::{MiddlewareMutex, HttpTrace, mw, mw_group, MiddlewareGroup},
+    context::{get_context, set_context, ContextKey},
+};
 
 
 #[tokio::main]
@@ -17,16 +17,22 @@ async fn main() {
 
 	let mut r = Router::new();
 
-    let handle_home: ArcHandler = Handler::new(|request| {
-        let response = new_response(200, "<h1>Home</h1>");
-        let response = set_header(response, "Content-Type", "text/html");
-        return (request, response);
-    });
+    pub fn handle_home() -> ArcHandler {
+        return Handler::new(|request| {
+            let response = new_response(200, "<h1>Home</h1>");
+            let response = set_header(response, "Content-Type", "text/html");
+            return (request, response);
+        });
+    }
 
-    pub const KEY_TRACE: &RequestContextKey = "TRACE";
+    // // TODO: make it so handlers are stored in a func and returned
+    // let handle_home: ArcHandler = 
+    // });
+
+    pub const KEY_TRACE: &ContextKey = "TRACE";
 
     pub fn mw_trace() -> MiddlewareMutex {
-        return new_middleware(|request| {
+        return mw(|request| {
             let trace = HttpTrace{
                 time_stamp: chrono::Utc::now().to_rfc3339(),
             };
@@ -44,8 +50,8 @@ async fn main() {
     }
     
     pub fn mw_trace_log() -> MiddlewareMutex {
-        return new_middleware(|request| {
-            let mw_trace = extract_context_str(&request.context, KEY_TRACE.to_string());
+        return mw(|request| {
+            let mw_trace = get_context(&request.context, KEY_TRACE.to_string());
             if mw_trace == "" {
                 return Some(new_response(500, "trace not found"));
             }
@@ -58,15 +64,17 @@ async fn main() {
         });
     }
 
-    r.add(Route::new("GET /", Arc::clone(&handle_home))
+    r.add(Route::new("GET /", handle_home())
         .middleware(mw_trace())
         .outerware(mw_trace_log())
     );
 
-    let mw_group_trace = MiddlewareGroup::new(vec![mw_trace()], vec![mw_trace_log()]);
-    
-    r.add(Route::new("GET /about", handle_home)
-        .group(mw_group_trace)
+    pub fn mw_group_trace() -> MiddlewareGroup {
+        return mw_group(vec![mw_trace()], vec![mw_trace_log()]);
+    }
+
+    r.add(Route::new("GET /about", handle_home())
+        .group(mw_group_trace())
     );
 
     // TODO: convert types to &str if possible
