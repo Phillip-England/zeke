@@ -96,6 +96,7 @@ pub fn mw_group_trace() -> MiddlewareGroup {
 }
 
 // a type to store a timescamp in our context
+// Deserialize is required for the `get_context` function to work on the type
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HttpTrace {
     pub time_stamp: String,
