@@ -1,11 +1,14 @@
 
 
 
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+
 use zeke::http::{
     router::{Router, Route},
     handler::{Handler, ArcHandler},
     response::{new_response, set_header},
-    middleware::{MiddlewareMutex, HttpTrace, mw, mw_group, MiddlewareGroup},
+    middleware::{MiddlewareMutex, mw, mw_group, MiddlewareGroup},
     context::{get_context, set_context, ContextKey},
 };
 
@@ -92,4 +95,39 @@ pub fn mw_group_trace() -> MiddlewareGroup {
     return mw_group(vec![mw_trace()], vec![mw_trace_log()]);
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct HttpTrace {
+    pub time_stamp: String,
+}
+
+impl HttpTrace {
+    /// Prints the time elapsed since the `time_stamp` was set.
+    pub fn get_time_elapsed(&self) -> String {
+        // Parse the stored RFC3339 timestamp back into a DateTime<Utc>
+        if let Ok(time_set) = DateTime::parse_from_rfc3339(&self.time_stamp) {
+            let time_set = time_set.with_timezone(&Utc);
+
+            // Get the current UTC time
+            let now = Utc::now();
+
+            // Calculate the duration elapsed
+            let duration = now.signed_duration_since(time_set);
+            let micros = duration.num_microseconds();
+            match micros {
+                Some(micros) => {
+                    if micros < 1000 {
+                        return format!("{}µ", micros);
+                    }
+                },
+                None => {
+
+                }
+            }
+            let millis = duration.num_milliseconds();
+            return format!("{}ms", millis);
+        } else {
+            return "failed to parse time_stamp".to_string();
+        }
+    }
+}
 
