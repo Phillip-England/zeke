@@ -8,40 +8,13 @@ Zeke aims to stay out of your way.
 
 ## Quickstart
 
-init a router:
 ```rs
-let mut r: Router = Router::new();
-```
-
-create a handler:
-```rs
-fn handle_home() -> Handler {
-    return Handler::new(|request| {
-        let response = new_response(200, "<h1>Home</h1>");
-        let response = set_header(response, "Content-Type", "text/html");
-        return (request, response);
-    });
-}
-```
-
-add the handler to your router:
-```rs
-r.add(Route::new("GET /", handle_home()));
-```
-
-And all together we have:
-```rs
-
-use zeke::http::{
-    router::Router,
-    handler::Handler,
-    response::{new_response, set_header},
-};
-
 fn main() {
 
+    // init a router
     let mut r: Router = Router::new();
 
+    // create a handler
     fn handle_home() -> Handler {
         return Handler::new(|request| {
             let response = new_response(200, "<h1>Home</h1>");
@@ -50,7 +23,19 @@ fn main() {
         });
     }
 
+    // mount the handler
     r.add(Route::new("GET /", handle_home()));
+
+    // serve
+    let err = r.serve("127.0.0.1:8080").await;
+    match err {
+        Some(e) => {
+            println!("error: {:?}", e);
+        },
+        None => {
+            println!("server closed");
+        },
+    }
 
 }
 ```
