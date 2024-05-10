@@ -4,7 +4,7 @@ use std::io::Error;
 use tokio::sync::Mutex;
 
 
-use crate::http::middleware::{Middlewares, MiddlewareMutex, MiddlewareGroup};
+use crate::http::middleware::{Middlewares, Middleware, MiddlewareGroup};
 use crate::http::handler::Handler;
 use crate::http::socket::connect_socket;
 
@@ -63,11 +63,11 @@ impl Route {
         };
         return route;
     }
-    pub fn middleware(mut self: Route, middleware: MiddlewareMutex) -> Self {
+    pub fn middleware(mut self: Route, middleware: Middleware) -> Self {
         self.middlewares.push(middleware);
         return self;
     }
-    pub fn outerware(mut self: Route, outerware: MiddlewareMutex) -> Self {
+    pub fn outerware(mut self: Route, outerware: Middleware) -> Self {
         self.outerwares.push(outerware);
         return self;
     }

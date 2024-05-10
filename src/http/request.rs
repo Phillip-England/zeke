@@ -65,7 +65,7 @@ pub fn parse(mut request: Request, buffer: RequestBuffer) -> (Request, Option<Re
                     continue
                 }
                 // headers
-                if (line.len() == 0) { // empty line
+                if line.len() == 0 { // empty line
                     continue
                 }
                 let trimmed_line = line.replace(" ", "");

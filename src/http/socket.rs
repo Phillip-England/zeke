@@ -4,7 +4,7 @@ use std::sync::{Arc, PoisonError};
 use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::{TcpListener, TcpStream}, time::timeout, sync::{Mutex, MutexGuard}};
 
 use crate::http::router::{Router, RouteHandler};
-use crate::http::middleware::{Middlewares, Middleware};
+use crate::http::middleware::{Middlewares, MiddlewareFunc};
 use crate::http::response::{to_bytes, new_response, not_found, Response, ResponseBytes, PotentialResponse};
 use crate::http::request::{Request, new_request, RequestBuffer};
 use crate::http::handler::Handler;
@@ -36,7 +36,7 @@ pub async fn connect_socket(listener: &TcpListener, router: Arc<Router>) {
                     Ok(_) => {
                         return;
                     },
-                    Err(e) => {
+                    Err(_e) => {
                         // TODO: set up logging when shutdown fails
                         // TODO: search up the implications of shutdown failure
                     }
@@ -130,7 +130,7 @@ pub async fn handle_middleware(mut request: Request, middlewares: Middlewares) -
         return (request, None);
     };
     for middleware in middlewares {
-        let middleware: Result<MutexGuard<Middleware>, PoisonError<MutexGuard<Middleware>>> = Ok(middleware.lock().await); // TODO: need to handle this ok() better
+        let middleware: Result<MutexGuard<MiddlewareFunc>, PoisonError<MutexGuard<MiddlewareFunc>>> = Ok(middleware.lock().await); // TODO: need to handle this ok() better
         match middleware {
             Ok(middleware) => {
                 let potential_response = middleware(&mut request);

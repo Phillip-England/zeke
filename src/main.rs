@@ -8,7 +8,7 @@ use zeke::http::{
     router::{Router, Route},
     handler::Handler,
     response::{new_response, set_header},
-    middleware::{MiddlewareMutex, mw, mw_group, MiddlewareGroup},
+    middleware::{Middleware, mw, mw_group, MiddlewareGroup},
     context::{get_context, set_context, ContextKey},
 };
 
@@ -56,7 +56,7 @@ pub fn handle_home() -> Handler {
 pub const KEY_TRACE: &ContextKey = "TRACE";
 
 // creating a middleware
-pub fn mw_trace() -> MiddlewareMutex {
+pub fn mw_trace() -> Middleware {
     return mw(|request| {
         let trace = HttpTrace{
             time_stamp: chrono::Utc::now().to_rfc3339(),
@@ -75,7 +75,7 @@ pub fn mw_trace() -> MiddlewareMutex {
 }
 
 // creating another middleware
-pub fn mw_trace_log() -> MiddlewareMutex {
+pub fn mw_trace_log() -> Middleware {
     return mw(|request| {
         let mw_trace = get_context(&request.context, KEY_TRACE.to_string());
         if mw_trace == "" {
@@ -95,6 +95,7 @@ pub fn mw_group_trace() -> MiddlewareGroup {
     return mw_group(vec![mw_trace()], vec![mw_trace_log()]);
 }
 
+// a type to store a timescamp in our context
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HttpTrace {
     pub time_stamp: String,
