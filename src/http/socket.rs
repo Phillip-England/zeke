@@ -7,7 +7,7 @@ use crate::http::router::{Router, RouteHandler};
 use crate::http::middleware::{Middlewares, Middleware};
 use crate::http::response::{to_bytes, new_response, not_found, Response, ResponseBytes, PotentialResponse};
 use crate::http::request::{Request, new_request, RequestBuffer};
-use crate::http::handler::{Handler, ArcHandler};
+use crate::http::handler::Handler;
 
 
 
@@ -87,7 +87,7 @@ pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialR
     let route_handler: Option<&Arc<Mutex<RouteHandler>>> = router.routes.get(request.method_and_path.as_str());
     match route_handler {
         Some(route_handler) => {
-            let potential_route: Result<MutexGuard<(ArcHandler, Middlewares, Middlewares)>, PoisonError<MutexGuard<(Handler, Middlewares, Middlewares)>>> = Ok(route_handler.lock().await); // TODO: need to handle this ok() better
+            let potential_route: Result<MutexGuard<(Handler, Middlewares, Middlewares)>, PoisonError<MutexGuard<(Handler, Middlewares, Middlewares)>>> = Ok(route_handler.lock().await); // TODO: need to handle this ok() better
             match potential_route {
                 Ok(route_handler) => {
                     let (handler, middlewares, outerwares) = &*route_handler;

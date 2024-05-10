@@ -5,10 +5,10 @@ use tokio::sync::Mutex;
 
 
 use crate::http::middleware::{Middlewares, MiddlewareMutex, MiddlewareGroup};
-use crate::http::handler::ArcHandler;
+use crate::http::handler::Handler;
 use crate::http::socket::connect_socket;
 
-pub type RouteHandler = (ArcHandler, Middlewares, Middlewares);
+pub type RouteHandler = (Handler, Middlewares, Middlewares);
 
 pub type Routes = HashMap<&'static str, Arc<Mutex<RouteHandler>>>;
 
@@ -48,13 +48,13 @@ impl Router {
 
 pub struct Route {
     pub path: &'static str,
-    pub handler: ArcHandler,
+    pub handler: Handler,
     pub middlewares: Middlewares,
     pub outerwares: Middlewares,
 }
 
 impl Route {
-    pub fn new(path: &'static str, handler: ArcHandler) -> Route {
+    pub fn new(path: &'static str, handler: Handler) -> Route {
         let route = Route{
             path: path,
             handler: handler,
@@ -79,15 +79,6 @@ impl Route {
             self.outerwares.push(outerware);
         }
         return self;
-    }
-    pub fn clone(self: &Route) -> Route {
-        let route = Route{
-            path: self.path,
-            handler: self.handler.clone(),
-            middlewares: self.middlewares.clone(),
-            outerwares: self.outerwares.clone(),
-        };
-        return route;
     }
 }
 

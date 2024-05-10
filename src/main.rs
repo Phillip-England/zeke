@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use zeke::http::{
     router::{Router, Route},
-    handler::{Handler, ArcHandler},
+    handler::Handler,
     response::{new_response, set_header},
     middleware::{MiddlewareMutex, mw, mw_group, MiddlewareGroup},
     context::{get_context, set_context, ContextKey},
@@ -44,7 +44,7 @@ async fn main() {
 }
 
 // creating a handler
-pub fn handle_home() -> ArcHandler {
+pub fn handle_home() -> Handler {
     return Handler::new(|request| {
         let response = new_response(200, "<h1>Home</h1>");
         let response = set_header(response, "Content-Type", "text/html");

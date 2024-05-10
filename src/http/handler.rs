@@ -13,15 +13,13 @@ pub struct Handler {
     pub func: Arc<Mutex<Box<dyn Fn(Request) -> (Request, Response) + Send + 'static>>>,
 } 
 
-pub type ArcHandler = Arc<Handler>;
-
 impl Handler {
-    pub fn new<F>(f: F) -> ArcHandler
+    pub fn new<F>(f: F) -> Handler
     where
         F: Fn(Request) -> (Request, Response) + Send + 'static,
     {
-        Arc::new(Handler {
+        Handler {
             func: Arc::new(Mutex::new(Box::new(f)))
-        })
+        }
     }
 }
