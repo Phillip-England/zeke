@@ -24,9 +24,4 @@ impl Handler {
             func: Arc::new(Mutex::new(Box::new(f)))
         })
     }
-    pub fn clone(&self) -> Handler {
-        Handler {
-            func: Arc::clone(&self.func)
-        }
-    }
 }

@@ -7,7 +7,7 @@ use crate::http::router::{Router, RouteHandler};
 use crate::http::middleware::{Middlewares, Middleware};
 use crate::http::response::{to_bytes, new_response, not_found, Response, ResponseBytes, PotentialResponse};
 use crate::http::request::{Request, new_request, RequestBuffer};
-use crate::http::handler::{Handler, HandlerFunc, ArcHandler};
+use crate::http::handler::{Handler, ArcHandler};
 
 
 
