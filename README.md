@@ -26,7 +26,7 @@ fn handle_hello_world() -> Handler {
 ```
 
 ### Routes
-Routes are added to the Router type:
+Routes are added to the Router:
 
 ```rs
 r.add(Route::new("GET /", handle_hello_world()))
@@ -70,6 +70,7 @@ r.add(Route::new("GET /name-then-color", handle_hello_world())
 
 ### Shared State
 
+#### Define a Shared Type
 Start by defining a type you intend to share between middleware, handlers, and outerware. Here, we define `HttpTrace` which will be used to log out request details after a request is processed.
 
 NOTE: Any type you intend to share must derive `Serialize` and `Deserialize` from [serde](https://docs.rs/serde/latest/serde/index.html). I am using `version serde = { version = "1.0.200", features = ["derive"] }` in my `cargo.toml`.
@@ -85,16 +86,10 @@ pub struct HttpTrace {
 }
 
 impl HttpTrace {
-    /// Prints the time elapsed since the `time_stamp` was set.
     pub fn get_time_elapsed(&self) -> String {
-        // Parse the stored RFC3339 timestamp back into a DateTime<Utc>
         if let Ok(time_set) = DateTime::parse_from_rfc3339(&self.time_stamp) {
             let time_set = time_set.with_timezone(&Utc);
-
-            // Get the current UTC time
             let now = Utc::now();
-
-            // Calculate the duration elapsed
             let duration = now.signed_duration_since(time_set);
             let micros = duration.num_microseconds();
             match micros {
@@ -116,27 +111,71 @@ impl HttpTrace {
 }
 ```
 
-Context keys can be created and used to share data of any type between our middleware, handlers, and outerware:
+#### Define Your Context
+Context keys are used to encode and decode your shared types between each part of the reqeust/response cycle.
 
-Start by defining an enum containing your keys:
+Start by defining an enum containing your context keys:
 
 ```rs
-// you can call this whatever you want
 pub enum AppContext {
-    TraceKey
+    // define your keys here
+    Trace
 }
 ```
 
-Implement the `Contextable` trait on your `AppContext`:
+Implement the `Contextable` trait on your `AppContext` and list your keys:
 ```rs
 impl Contextable for AppContext {
     fn key(&self) -> &'static str {
         match self {
-            // defining the &str associated our AppContext enum
-            AppContext::TraceKey => {"TRACE"},
-            // other keys go here..
+            // list your keys here
+            AppContext::Trace => {"TRACE"},
         }
     }
+}
+```
+
+#### Encoding a Shared Type
+Using `AppContext`, you can encode your shared types. Here we create a middleware which uses our `HttpTrace` type to track when we start processing our request:
+
+```rs
+pub fn mw_trace() -> Middleware {
+    return Middleware::new(|request| {
+        let trace = HttpTrace{
+            time_stamp: chrono::Utc::now().to_rfc3339(),
+        };
+        let trace_encoded = serde_json::to_string(&trace);
+        match trace_encoded {
+            Ok(trace_encoded) => {
+                // using our key to encode the HttpTrace
+                set_context(request, AppContext::Trace, trace_encoded);
+                return None;
+            },
+            Err(_) => {
+                return Some(new_response(500, "failed to encode trace"));
+            }
+        }
+    });
+}
+```
+
+#### Decoding a Shared Type
+Using `AppContext`, you can decode your shared types. Here, we create a middleware which will decode our `HttpTrace` and log out all the request details, including how long it took the request to process:
+
+```rs
+pub fn mw_trace_log() -> Middleware {
+    return Middleware::new(|request| {
+        let trace = get_context(&request.context, AppContext::Trace);
+        if trace == "" {
+            return Some(new_response(500, "trace not found"));
+        }
+        // decode our type here
+        let trace: HttpTrace = serde_json::from_str(&trace).unwrap();
+        let elapsed_time = trace.get_time_elapsed();
+        let log_message = format!("[{}][{}][{}]", request.method, request.path, elapsed_time);
+        println!("{}", log_message);
+        return None;
+    });
 }
 ```
 
