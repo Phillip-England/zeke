@@ -4,7 +4,7 @@ use std::sync::{Arc, PoisonError};
 use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::{TcpListener, TcpStream}, time::timeout, sync::{Mutex, MutexGuard}};
 
 use crate::http::router::{Router, RouteHandler};
-use crate::http::middleware::{Middlewares, MiddlewareFunc, Middleware};
+use crate::http::middleware::Middlewares;
 use crate::http::response::{to_bytes, new_response, not_found, Response, ResponseBytes, PotentialResponse};
 use crate::http::request::{Request, new_request, RequestBuffer};
 use crate::http::handler::Handler;
@@ -140,24 +140,6 @@ pub async fn handle_middleware(mut request: Request, middlewares: &Middlewares) 
                 continue;
             }
         }
-        // match middleware {
-        //     Ok(middleware) => {
-        //         let potential_response = middleware(&mut request);
-        //         match potential_response {
-        //             Some(response) => {
-        //                 return (request, Some(response));
-        //             },
-        //             None => {
-        //                 continue;
-        //             }
-        //         }
-        //     },
-        //     // we had a posion error when trying to lock the middleware
-        //     Err(_) => {
-        //         // TODO: set up logging for when a middleware is poisoned
-        //         return (request, Some(new_response(500, "failed to lock middleware")));
-        //     },
-        // }
     }
     return (request, None);
 }

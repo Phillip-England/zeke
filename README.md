@@ -3,52 +3,33 @@
 ## HTTP Library
 Zeke is a HTTP library built on top of Tokio. Zeke values *simplicity*. Things like routing, setting up handlers, and chaining middleware should be easy.
 
-## Minimal
-Zeke aims to stay out of your way. 
+## Features
 
-## Quickstart
+### Router
+Initialize a server by creating a Router:
 
 ```rs
-fn main() {
+let mut r: Router = Router::new();
+```
 
-    // init a router
-    let mut r: Router = Router::new();
+### Handlers
+Handlers are functions that *return* a Handler:
 
-    // create a handler
-    fn handle_home() -> Handler {
-        return Handler::new(|request| {
-            let response = new_response(200, "<h1>Home</h1>");
-            let response = set_header(response, "Content-Type", "text/html");
-            return (request, response);
-        });
-    }
-
-    // mount the handler
-    r.add(Route::new("GET /", handle_home()));
-
-    // serve
-    let err = r.serve("127.0.0.1:8080").await;
-    match err {
-        Some(e) => {
-            println!("error: {:?}", e);
-        },
-        None => {
-            println!("server closed");
-        },
-    }
-
+```rs
+fn handle_hello_world() -> Handler {
+    return Handler::new(|request| {
+        let response = new_response(200, "<h1>Hello, World!</h1>");
+        let response = set_header(response, "Content-Type", "text/html");
+        return (request, response);
+    });
 }
 ```
 
-## Middleware
-
-Zeke makes middleware a breeze. Let's create a logging middleware.
+### Routes
+Routes are *added* to the Router type:
 
 ```rs
-fn main() {
-    // --snip
-}
-
+r.add(Route::new("GET /", handle_hello_world()))
 ```
 
 

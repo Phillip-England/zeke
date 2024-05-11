@@ -4,4 +4,4 @@ pub use http::router::{Router, Route};
 pub use http::handler::Handler;
 pub use http::response::{new_response, set_header};
 pub use http::middleware::{Middleware, MiddlewareGroup};
-pub use http::context::{get_context, set_context, ContextKey};
+pub use http::context::{get_context, set_context, Contextable};

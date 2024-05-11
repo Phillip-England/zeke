@@ -5,11 +5,11 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use zeke::http::{
-    router::{Router, Route},
-    handler::Handler,
-    response::{new_response, set_header},
-    middleware::{Middleware, MiddlewareGroup},
-    context::{get_context, set_context, Contextable},
+    context::{get_context, set_context, Contextable}, 
+    handler::Handler, 
+    middleware::{Middleware, MiddlewareGroup}, 
+    response::{new_response, set_header}, 
+    router::{Route, Router},
 };
 
 
@@ -59,23 +59,25 @@ pub enum AppContext {
 
 // implementing Contextable for AppContext
 impl Contextable for AppContext {
-    fn to_key(&self) -> &'static str {
+    fn keys(&self) -> &'static str {
         match self {
             AppContext::Trace => {"TRACE"},
         }
     }
 }
 
+
+
 // creating a middleware
 pub fn mw_trace() -> Middleware {
-    return Middleware::new(|request| {
+    return Middleware::new(move |request| {
         let trace = HttpTrace{
             time_stamp: chrono::Utc::now().to_rfc3339(),
         };
         let trace_encoded = serde_json::to_string(&trace);
         match trace_encoded {
             Ok(trace_encoded) => {
-                set_context(request, AppContext::Trace, trace_encoded);
+                set_context(request, &AppContext::Trace, trace_encoded);
                 return None;
             },
             Err(_) => {
@@ -87,8 +89,8 @@ pub fn mw_trace() -> Middleware {
 
 // creating another middleware
 pub fn mw_trace_log() -> Middleware {
-    return Middleware::new(|request| {
-        let trace = get_context(&request.context, AppContext::Trace);
+    return Middleware::new(move |request| {
+        let trace = get_context(&request.context, &AppContext::Trace);
         if trace == "" {
             return Some(new_response(500, "trace not found"));
         }
