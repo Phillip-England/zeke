@@ -4,7 +4,7 @@ use std::sync::{Arc, PoisonError};
 use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::{TcpListener, TcpStream}, time::timeout, sync::{Mutex, MutexGuard}};
 
 use crate::http::router::{Router, RouteHandler};
-use crate::http::middleware::{Middlewares, MiddlewareFunc};
+use crate::http::middleware::{Middlewares, MiddlewareFunc, Middleware};
 use crate::http::response::{to_bytes, new_response, not_found, Response, ResponseBytes, PotentialResponse};
 use crate::http::request::{Request, new_request, RequestBuffer};
 use crate::http::handler::Handler;
@@ -91,7 +91,7 @@ pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialR
             match potential_route {
                 Ok(route_handler) => {
                     let (handler, middlewares, outerwares) = &*route_handler;
-                    let (request, potential_response) = handle_middleware(request, middlewares.to_vec()).await;
+                    let (request, potential_response) = handle_middleware(request, middlewares).await;
                     match potential_response {
                         Some(response) => {
                             return Some(response);
@@ -99,7 +99,7 @@ pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialR
                         None => {
                             let handler = handler.func.lock().await; // TODO: need to handle this ok() better
                             let (request, handler_response) = handler(request);
-                            let (_, potential_response) = handle_middleware(request, outerwares.to_vec()).await;
+                            let (_, potential_response) = handle_middleware(request, outerwares).await;
                             match potential_response {
                                 Some(response) => {
                                     return Some(response);
@@ -125,30 +125,39 @@ pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialR
 
 }
 
-pub async fn handle_middleware(mut request: Request, middlewares: Middlewares) -> (Request, PotentialResponse) {
+pub async fn handle_middleware(mut request: Request, middlewares: &Middlewares) -> (Request, PotentialResponse) {
     if middlewares.len() == 0 {
         return (request, None);
     };
     for middleware in middlewares {
-        let middleware: Result<MutexGuard<MiddlewareFunc>, PoisonError<MutexGuard<MiddlewareFunc>>> = Ok(middleware.lock().await); // TODO: need to handle this ok() better
-        match middleware {
-            Ok(middleware) => {
-                let potential_response = middleware(&mut request);
-                match potential_response {
-                    Some(response) => {
-                        return (request, Some(response));
-                    },
-                    None => {
-                        continue;
-                    }
-                }
+        let middleware:MutexGuard<Box<dyn Fn(&mut Request) -> Option<Response> + Sync + Send>>  = middleware.func.lock().await; // TODO: need to handle this ok() better
+        let potential_response = middleware(&mut request);
+        match potential_response {
+            Some(response) => {
+                return (request, Some(response));
             },
-            // we had a posion error when trying to lock the middleware
-            Err(_) => {
-                // TODO: set up logging for when a middleware is poisoned
-                return (request, Some(new_response(500, "failed to lock middleware")));
-            },
+            None => {
+                continue;
+            }
         }
+        // match middleware {
+        //     Ok(middleware) => {
+        //         let potential_response = middleware(&mut request);
+        //         match potential_response {
+        //             Some(response) => {
+        //                 return (request, Some(response));
+        //             },
+        //             None => {
+        //                 continue;
+        //             }
+        //         }
+        //     },
+        //     // we had a posion error when trying to lock the middleware
+        //     Err(_) => {
+        //         // TODO: set up logging for when a middleware is poisoned
+        //         return (request, Some(new_response(500, "failed to lock middleware")));
+        //     },
+        // }
     }
     return (request, None);
 }

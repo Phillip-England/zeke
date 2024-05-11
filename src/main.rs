@@ -8,7 +8,7 @@ use zeke::http::{
     router::{Router, Route},
     handler::Handler,
     response::{new_response, set_header},
-    middleware::{Middleware, mw, mw_group, MiddlewareGroup},
+    middleware::{Middleware, mw_group, MiddlewareGroup},
     context::{get_context, set_context, ContextKey},
 };
 
@@ -57,7 +57,7 @@ pub const KEY_TRACE: &ContextKey = "TRACE";
 
 // creating a middleware
 pub fn mw_trace() -> Middleware {
-    return mw(|request| {
+    return Middleware::new(|request| {
         let trace = HttpTrace{
             time_stamp: chrono::Utc::now().to_rfc3339(),
         };
@@ -76,7 +76,7 @@ pub fn mw_trace() -> Middleware {
 
 // creating another middleware
 pub fn mw_trace_log() -> Middleware {
-    return mw(|request| {
+    return Middleware::new(|request| {
         let mw_trace = get_context(&request.context, KEY_TRACE.to_string());
         if mw_trace == "" {
             return Some(new_response(500, "trace not found"));
