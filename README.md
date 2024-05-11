@@ -3,6 +3,11 @@
 ## Simple HTTP Library
 Zeke is a HTTP library built on top of Tokio. Zeke values *simplicitiy and minimalism*.
 
+## Installation
+In `cargo.toml`:
+[dependencies]
+zeke = "0.1.2"
+
 ## Quickstart
 This quickstart will show you how to:
 1. Create a Router
