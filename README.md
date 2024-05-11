@@ -5,8 +5,11 @@ Zeke is a HTTP library built on top of Tokio. Zeke values *simplicitiy and minim
 
 ## Installation
 In `cargo.toml`:
+
+```toml
 [dependencies]
 zeke = "0.1.2"
+```
 
 ## Quickstart
 This quickstart will show you how to:
