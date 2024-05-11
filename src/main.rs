@@ -8,8 +8,8 @@ use zeke::http::{
     router::{Router, Route},
     handler::Handler,
     response::{new_response, set_header},
-    middleware::{Middleware, MiddlewareKey, MiddlewareGroup},
-    context::{get_context, set_context, ContextKey, Contextable},
+    middleware::{Middleware, MiddlewareGroup},
+    context::{get_context, set_context, Contextable},
 };
 
 
@@ -21,8 +21,8 @@ async fn main() {
 
     // mount a handler with middleware/outerware
     r.add(Route::new("GET /", handle_home())
-        .middleware(mw_trace().1)
-        .outerware(mw_trace_log().1)
+        .middleware(mw_trace())
+        .outerware(mw_trace_log())
     );
 
     // mount a handler with a middleware group
@@ -61,23 +61,20 @@ pub enum AppContext {
 impl Contextable for AppContext {
     fn to_key(&self) -> &'static str {
         match self {
-            AppContext::Trace => {
-                return "TRACE";
-            }
+            AppContext::Trace => {"TRACE"},
         }
     }
 }
 
 // creating a middleware
-pub fn mw_trace() -> (MiddlewareKey, Middleware) {
-    return Middleware::new("TRACE",|request| {
+pub fn mw_trace() -> Middleware {
+    return Middleware::new(|request| {
         let trace = HttpTrace{
             time_stamp: chrono::Utc::now().to_rfc3339(),
         };
         let trace_encoded = serde_json::to_string(&trace);
         match trace_encoded {
             Ok(trace_encoded) => {
-                let (key, _) = mw_trace();
                 set_context(request, AppContext::Trace, trace_encoded);
                 return None;
             },
@@ -89,8 +86,8 @@ pub fn mw_trace() -> (MiddlewareKey, Middleware) {
 }
 
 // creating another middleware
-pub fn mw_trace_log() -> (MiddlewareKey, Middleware) {
-    return Middleware::new("", |request| {
+pub fn mw_trace_log() -> Middleware {
+    return Middleware::new(|request| {
         let trace = get_context(&request.context, AppContext::Trace);
         if trace == "" {
             return Some(new_response(500, "trace not found"));
@@ -105,9 +102,7 @@ pub fn mw_trace_log() -> (MiddlewareKey, Middleware) {
 
 // grouping middleware
 pub fn mw_group_trace() -> MiddlewareGroup {
-    let (_, mw_trace) = mw_trace();
-    let (_, mw_trace_log) = mw_trace_log();
-    return MiddlewareGroup::new(vec![mw_trace], vec![mw_trace_log]);
+    return MiddlewareGroup::new(vec![mw_trace()], vec![mw_trace_log()]);
 }
 
 // a type to store a timescamp in our context

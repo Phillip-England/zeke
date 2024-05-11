@@ -15,13 +15,13 @@ pub struct Middleware {
 }
 
 impl Middleware {
-    pub fn new<F>(key: MiddlewareKey, f: F) -> (MiddlewareKey, Middleware)
+    pub fn new<F>(f: F) -> Middleware
     where
         F: Fn(&mut Request) -> Option<Response> + Send + Sync + 'static,
     {
-        return (key, Middleware {
+        Middleware {
             func: Arc::new(Mutex::new(Box::new(f))),
-        })
+        }
     }
 }
 
