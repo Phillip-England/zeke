@@ -3,7 +3,7 @@ name = "zeke"
 version = "0.1.1"
 edition = "2021"
 authors = ["Phillip England <phillip.mark.england@gmail.com>"]
-description = "A Backend Rust HTTP Framework Built on Tokio"
+description = "a http library for rust built on top of tokio"
 license = "MIT"
 
 [dependencies]

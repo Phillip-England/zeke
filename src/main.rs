@@ -29,7 +29,7 @@ async fn main() {
 
     pub fn handle_home() -> Handler {
         return Handler::new(|request| {
-            let response = new_response(200, "<h1>Home</h1>");
+            let response = new_response(200, "<h1>Home</h1><a href='/about'>About</a>");
             let response = set_header(response, "Content-Type", "text/html");
             return (request, response);
         });
@@ -37,7 +37,7 @@ async fn main() {
 
     pub fn handle_about() -> Handler {
         return Handler::new(|request| {
-            let response = new_response(200, "<h1>About</h1>");
+            let response = new_response(200, "<h1>About</h1><a href='/'>Home</a>");
             let response = set_header(response, "Content-Type", "text/html");
             return (request, response);
         });
