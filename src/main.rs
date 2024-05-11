@@ -8,7 +8,7 @@ use zeke::http::{
     router::{Router, Route},
     handler::Handler,
     response::{new_response, set_header},
-    middleware::{Middleware, mw_group, MiddlewareGroup},
+    middleware::{Middleware, MiddlewareGroup},
     context::{get_context, set_context, ContextKey},
 };
 
@@ -92,7 +92,7 @@ pub fn mw_trace_log() -> Middleware {
 
 // grouping middleware
 pub fn mw_group_trace() -> MiddlewareGroup {
-    return mw_group(vec![mw_trace()], vec![mw_trace_log()]);
+    return MiddlewareGroup::new(vec![mw_trace()], vec![mw_trace_log()]);
 }
 
 // a type to store a timescamp in our context

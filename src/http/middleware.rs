@@ -30,11 +30,14 @@ pub struct MiddlewareGroup {
     pub outerwares: Middlewares,
 }
 
-pub fn mw_group(middlewares: Vec<Middleware>, outerwares: Vec<Middleware>) -> MiddlewareGroup {
-    return MiddlewareGroup {
-        middlewares: middlewares,
-        outerwares: outerwares,
-    };
+impl MiddlewareGroup {
+    pub fn new(middlewares: Middlewares, outerwares: Middlewares) -> MiddlewareGroup {
+        return MiddlewareGroup {
+            middlewares: middlewares,
+            outerwares: outerwares,
+        };
+    }
+
 }
 
 
