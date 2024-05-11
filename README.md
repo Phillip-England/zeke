@@ -40,4 +40,15 @@ fn main() {
 }
 ```
 
+## Middleware
+
+Zeke makes middleware a breeze. Let's create a logging middleware.
+
+```rs
+fn main() {
+    // --snip
+}
+
+```
+
 

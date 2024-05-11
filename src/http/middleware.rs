@@ -5,6 +5,8 @@ use tokio::sync::Mutex;
 use crate::http::request::Request;
 use crate::http::response::Response;
 
+pub type MiddlewareKey = &'static str;
+
 pub type MiddlewareFunc = dyn Fn(&mut Request) -> Option<Response> + Send + Sync + 'static;
 // pub type Middleware = Arc<Mutex<MiddlewareFunc>>;
 
@@ -13,13 +15,13 @@ pub struct Middleware {
 }
 
 impl Middleware {
-    pub fn new<F>(f: F) -> Middleware
+    pub fn new<F>(key: MiddlewareKey, f: F) -> (MiddlewareKey, Middleware)
     where
         F: Fn(&mut Request) -> Option<Response> + Send + Sync + 'static,
     {
-        Middleware {
-            func: Arc::new(Mutex::new(Box::new(f)))
-        }
+        return (key, Middleware {
+            func: Arc::new(Mutex::new(Box::new(f))),
+        })
     }
 }
 
@@ -37,7 +39,6 @@ impl MiddlewareGroup {
             outerwares: outerwares,
         };
     }
-
 }
 
 

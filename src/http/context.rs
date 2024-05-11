@@ -6,18 +6,14 @@ pub type ContextKey = str;
 pub type Context = HashMap<String, String>;
 
 
-pub fn set_context(request: &mut Request, key: String, value: String) {
-    request.context.insert(key, value);
+pub fn set_context<K: Contextable>(request: &mut Request, key: K, value: String) {
+    request.context.insert(key.to_key().to_string(), value);
 }
 
-pub fn get_context(context: &Context, key: String) -> String {
-    let result = context.get(&key);
-    match result {
-        Some(str) => {
-            return str.to_string();
-        },
-        None => {
-            return "".to_string();
-        }
-    }
+pub fn get_context<K: Contextable>(context: &Context, key: K) -> String {
+    context.get(key.to_key()).cloned().unwrap_or_default()
+}
+
+pub trait Contextable {
+    fn to_key(&self) -> &'static str;
 }

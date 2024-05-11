@@ -8,8 +8,8 @@ use zeke::http::{
     router::{Router, Route},
     handler::Handler,
     response::{new_response, set_header},
-    middleware::{Middleware, MiddlewareGroup},
-    context::{get_context, set_context, ContextKey},
+    middleware::{Middleware, MiddlewareKey, MiddlewareGroup},
+    context::{get_context, set_context, ContextKey, Contextable},
 };
 
 
@@ -21,8 +21,8 @@ async fn main() {
 
     // mount a handler with middleware/outerware
     r.add(Route::new("GET /", handle_home())
-        .middleware(mw_trace())
-        .outerware(mw_trace_log())
+        .middleware(mw_trace().1)
+        .outerware(mw_trace_log().1)
     );
 
     // mount a handler with a middleware group
@@ -52,19 +52,33 @@ pub fn handle_home() -> Handler {
     });
 }
 
-// setting up context keys
-pub const KEY_TRACE: &ContextKey = "TRACE";
+// user defined context
+pub enum AppContext {
+    Trace,
+}
+
+// implementing Contextable for AppContext
+impl Contextable for AppContext {
+    fn to_key(&self) -> &'static str {
+        match self {
+            AppContext::Trace => {
+                return "TRACE";
+            }
+        }
+    }
+}
 
 // creating a middleware
-pub fn mw_trace() -> Middleware {
-    return Middleware::new(|request| {
+pub fn mw_trace() -> (MiddlewareKey, Middleware) {
+    return Middleware::new("TRACE",|request| {
         let trace = HttpTrace{
             time_stamp: chrono::Utc::now().to_rfc3339(),
         };
         let trace_encoded = serde_json::to_string(&trace);
         match trace_encoded {
             Ok(trace_encoded) => {
-                set_context(request, KEY_TRACE.to_string(), trace_encoded);
+                let (key, _) = mw_trace();
+                set_context(request, AppContext::Trace, trace_encoded);
                 return None;
             },
             Err(_) => {
@@ -75,24 +89,25 @@ pub fn mw_trace() -> Middleware {
 }
 
 // creating another middleware
-pub fn mw_trace_log() -> Middleware {
-    return Middleware::new(|request| {
-        let mw_trace = get_context(&request.context, KEY_TRACE.to_string());
-        if mw_trace == "" {
+pub fn mw_trace_log() -> (MiddlewareKey, Middleware) {
+    return Middleware::new("", |request| {
+        let trace = get_context(&request.context, AppContext::Trace);
+        if trace == "" {
             return Some(new_response(500, "trace not found"));
         }
-        let trace: HttpTrace = serde_json::from_str(&mw_trace).unwrap();
+        let trace: HttpTrace = serde_json::from_str(&trace).unwrap();
         let elapsed_time = trace.get_time_elapsed();
         let log_message = format!("[{}][{}][{}]", request.method, request.path, elapsed_time);
         println!("{}", log_message);
-
         return None;
     });
 }
 
 // grouping middleware
 pub fn mw_group_trace() -> MiddlewareGroup {
-    return MiddlewareGroup::new(vec![mw_trace()], vec![mw_trace_log()]);
+    let (_, mw_trace) = mw_trace();
+    let (_, mw_trace_log) = mw_trace_log();
+    return MiddlewareGroup::new(vec![mw_trace], vec![mw_trace_log]);
 }
 
 // a type to store a timescamp in our context
