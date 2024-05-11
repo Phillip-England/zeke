@@ -59,7 +59,7 @@ pub enum AppContext {
 
 // implementing Contextable for AppContext
 impl Contextable for AppContext {
-    fn keys(&self) -> &'static str {
+    fn key(&self) -> &'static str {
         match self {
             AppContext::Trace => {"TRACE"},
         }
@@ -70,14 +70,14 @@ impl Contextable for AppContext {
 
 // creating a middleware
 pub fn mw_trace() -> Middleware {
-    return Middleware::new(move |request| {
+    return Middleware::new(|request| {
         let trace = HttpTrace{
             time_stamp: chrono::Utc::now().to_rfc3339(),
         };
         let trace_encoded = serde_json::to_string(&trace);
         match trace_encoded {
             Ok(trace_encoded) => {
-                set_context(request, &AppContext::Trace, trace_encoded);
+                set_context(request, AppContext::Trace, trace_encoded);
                 return None;
             },
             Err(_) => {
@@ -89,8 +89,8 @@ pub fn mw_trace() -> Middleware {
 
 // creating another middleware
 pub fn mw_trace_log() -> Middleware {
-    return Middleware::new(move |request| {
-        let trace = get_context(&request.context, &AppContext::Trace);
+    return Middleware::new(|request| {
+        let trace = get_context(&request.context, AppContext::Trace);
         if trace == "" {
             return Some(new_response(500, "trace not found"));
         }
