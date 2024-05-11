@@ -5,8 +5,8 @@ use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::{TcpListener, TcpStream}, ti
 
 use crate::http::router::{Router, RouteHandler};
 use crate::http::middleware::Middlewares;
-use crate::http::response::{to_bytes, new_response, not_found, Response, ResponseBytes, PotentialResponse};
-use crate::http::request::{Request, new_request, RequestBuffer};
+use crate::http::response::{Response, ResponseBytes, PotentialResponse};
+use crate::http::request::{Request, RequestBuffer};
 use crate::http::handler::Handler;
 
 
@@ -20,7 +20,7 @@ pub async fn connect_socket(listener: &TcpListener, router: Arc<Router>) {
             let (socket, _addr) = socket_result;
             tokio::spawn(async move {
                 let (socket, response) = handle_connection(socket, router).await;
-                let response_bytes: ResponseBytes = to_bytes(response);
+                let response_bytes: ResponseBytes = response.to_bytes();
                 let (mut socket, write_result) = write_socket(socket, &response_bytes).await;
                 match write_result {
                     Some(response) => {
@@ -60,9 +60,9 @@ pub async fn handle_connection(socket: TcpStream, router: Arc<Router>) -> (TcpSt
         None => {
             if request_bytes.len() == 0 {
                 // TODO: should this be a 500?
-                return (socket, new_response(500, "read 0 bytes from client connection"));
+                return (socket, Response::new(400, "read 0 bytes from client connection"));
             }
-            let (request, potential_response) = new_request(request_bytes);
+            let (request, potential_response) = Request::new(request_bytes);
             match potential_response {
                 Some(response) => {
                     return (socket, response);
@@ -74,7 +74,7 @@ pub async fn handle_connection(socket: TcpStream, router: Arc<Router>) -> (TcpSt
                             return (socket, response);
                         },
                         None => {
-                            return (socket, new_response(500, "failed to handle request"));
+                            return (socket, Response::new(500, "failed to handle request"));
                         },
                     }
                 },
@@ -105,7 +105,7 @@ pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialR
                                     return Some(response);
                                 },
                                 None => {
-                                    return Some(handler_response);
+                                    return Some(handler_response.clone());
                                 },
                             }
                         },
@@ -114,12 +114,12 @@ pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialR
                 // PoisonError is a type of error that occurs when a Mutex is poisoned
                 // TODO: set up logging for when a Mutex is poisoned
                 Err(_poision_error) => {
-                    return Some(new_response(500, "failed to lock route handler"));
+                    return Some(Response::new(500, "failed to lock route handler"));
                 },
             }
         },
         None => {
-            return Some(not_found());
+            return Some(Response::new(404, "Not Found"));
         },
     }
 
@@ -153,15 +153,15 @@ pub async fn read_socket(mut socket: TcpStream) -> (TcpStream, RequestBuffer, Po
         },
         Ok(Ok(_)) => {
             // No data read, potentially a graceful close
-            return (socket, buffer, Some(new_response(400, "No data received")));
+            return (socket, buffer, Some(Response::new(400, "No data received")));
         },
         Ok(Err(e)) => {
             // Handle specific I/O errors if needed
-            return (socket, buffer, Some(new_response(500, &format!("Error reading socket: {}", e))));
+            return (socket, buffer, Some(Response::new(500, &format!("Error reading socket: {}", e))));
         },
         Err(_) => {
             // Timeout
-            return (socket, buffer, Some(new_response(408, "Read timeout")));
+            return (socket, buffer, Some(Response::new(408, "Read timeout")));
         },
     }
 }
@@ -173,11 +173,11 @@ pub async fn write_socket(mut socket: TcpStream, response_bytes: &[u8]) -> (TcpS
         },
         Ok(Err(e)) => {
             // TODO: set up logging
-            return (socket, Some(new_response(500, &format!("Failed to write to socket: {}", e))));
+            return (socket, Some(Response::new(500, &format!("Failed to write to socket: {}", e))));
         },
         Err(_) => {
             // Timeout
-            return (socket, Some(new_response(408, "Write timeout")));
+            return (socket, Some(Response::new(408, "Write timeout")));
         },
     }
 }

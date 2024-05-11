@@ -1,8 +1,10 @@
 use std::{collections::HashMap, fmt::Debug};
 use serde::{Serialize, Deserialize};
 
-use crate::http::response::{new_response, Response};
+use crate::http::response::Response;
 use crate::http::context::Context;
+
+use super::response::PotentialResponse;
 
 
 pub type RequestBuffer = [u8; 1024];
@@ -16,6 +18,72 @@ pub struct Request {
     pub body: String,
     pub headers: HashMap<String, String>,
     pub context: Context,
+}
+
+impl Request {
+    pub fn new(request_bytes: RequestBuffer) -> (Request, PotentialResponse) {
+        return (Request::parse(request_bytes), None);
+    }
+    pub fn parse(request_bytes: RequestBuffer) -> Request {
+        let mut request = Request{
+            method_and_path: "".to_string(),
+            method: "".to_string(),
+            path: "".to_string(),
+            protocol: "".to_string(),
+            body: "".to_string(),
+            headers: HashMap::new(),
+            context: HashMap::new(),
+        };
+        let end = request_bytes.iter().position(|&x| x == 0).unwrap_or(request_bytes.len());
+        let request_string = String::from_utf8(request_bytes[..end].to_vec());
+        match request_string {
+            Err(_) => {
+                // TODO: failed to parse error here
+                return request;
+            }
+            Ok(request_string) => {
+                let lines: Vec<&str> = request_string.lines().collect();
+                for i in 0..lines.len() {
+                    let line = lines[i];
+                    // method, path, protocol
+                    if i == 0 {
+                        let parts = line.split(" ").collect::<Vec<&str>>();
+                        if parts.len() != 3 {
+                            // TODO: request did not have 3 parts: {method} {path} {protocol}
+                            return request;
+                        }
+                        let method = parts[0];
+                        let path = parts[1];
+                        let protocol = parts[2];
+                        request.method_and_path = format!("{} {}", method, path);
+                        request.method = method.to_string();
+                        request.path = path.to_string();
+                        request.protocol = protocol.to_string();
+                        continue
+                    }
+                    // request body
+                    if i == lines.len() - 1 {
+                        request.body = line.to_string();
+                        continue
+                    }
+                    // headers
+                    if line.len() == 0 { // empty line
+                        continue
+                    }
+                    let trimmed_line = line.replace(" ", "");
+                    let parts = trimmed_line.split(":").collect::<Vec<&str>>();
+                    if parts.len() != 2 {
+                        continue
+                    }
+                    let key = parts[0];
+                    let value = parts[1];
+                    request.headers.insert(key.to_string(), value.to_string());
+    
+                }
+                return request;
+            }
+        }
+    }
 }
 
 pub fn new_request(buffer: RequestBuffer) -> (Request, Option<Response>) {
@@ -38,7 +106,7 @@ pub fn parse(mut request: Request, buffer: RequestBuffer) -> (Request, Option<Re
     let request_string = String::from_utf8(buffer[..end].to_vec());
     match request_string {
         Err(_) => {
-            return (request, Some(new_response(500, "failed to parse request using from_utf8")));
+            return (request, Some(Response::new(500, "failed to parse request using from_utf8")));
         }
         Ok(request_string) => {
             let lines: Vec<&str> = request_string.lines().collect();
@@ -48,7 +116,7 @@ pub fn parse(mut request: Request, buffer: RequestBuffer) -> (Request, Option<Re
                 if i == 0 {
                     let parts = line.split(" ").collect::<Vec<&str>>();
                     if parts.len() != 3 {
-                        return (request, Some(new_response(500, "request did not have 3 parts: {method} {path} {protocol}")));
+                        return (request, Some(Response::new(500, "request did not have 3 parts: {method} {path} {protocol}")));
                     }
                     let method = parts[0];
                     let path = parts[1];

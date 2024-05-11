@@ -8,7 +8,7 @@ use zeke::http::{
     context::{get_context, set_context, Contextable}, 
     handler::Handler, 
     middleware::{Middleware, MiddlewareGroup}, 
-    response::{new_response, set_header}, 
+    response::Response, 
     router::{Route, Router},
 };
 
@@ -29,16 +29,16 @@ async fn main() {
 
     pub fn handle_home() -> Handler {
         return Handler::new(|request| {
-            let response = new_response(200, "<h1>Home</h1><a href='/about'>About</a>");
-            let response = set_header(response, "Content-Type", "text/html");
+            let response = Response::new(200, "<h1>Home</h1><a href='/about'>About</a>")
+                .set_header("Content-Type", "text/html");
             return (request, response);
         });
     }
 
     pub fn handle_about() -> Handler {
         return Handler::new(|request| {
-            let response = new_response(200, "<h1>About</h1><a href='/'>Home</a>");
-            let response = set_header(response, "Content-Type", "text/html");
+            let response = Response::new(200, "<h1>About</h1><a href='/'>Home</a>")
+                .set_header("Content-Type", "text/html");
             return (request, response);
         });
     }
@@ -75,7 +75,7 @@ async fn main() {
                     return None;
                 },
                 Err(_) => {
-                    return Some(new_response(500, "failed to encode trace"));
+                    return Some(Response::new(500, "failed to encode trace"));
                 }
             }
         });
@@ -89,7 +89,7 @@ async fn main() {
         return Middleware::new(|request| {
             let trace = get_context(&request.context, AppContext::Trace);
             if trace == "" {
-                return Some(new_response(500, "trace not found"));
+                return Some(Response::new(500, "trace not found"));
             }
             let trace: HttpTrace = serde_json::from_str(&trace).unwrap();
             let elapsed_time = trace.get_time_elapsed();
