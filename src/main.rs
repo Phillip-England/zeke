@@ -35,6 +35,14 @@ async fn main() {
         });
     }
 
+    pub fn handle_about() -> Handler {
+        return Handler::new(|request| {
+            let response = new_response(200, "<h1>About</h1>");
+            let response = set_header(response, "Content-Type", "text/html");
+            return (request, response);
+        });
+    }
+
     //================================================================
     // creating a type to represent shared state
     //================================================================
@@ -145,7 +153,7 @@ async fn main() {
     );
 
     // mount a handler with a middleware group
-    r.add(Route::new("GET /about", handle_home())
+    r.add(Route::new("GET /about", handle_about())
         .group(mw_group_trace())
     );
 
