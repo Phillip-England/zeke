@@ -97,7 +97,7 @@ pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialR
                             return Some(response);
                         },
                         None => {
-                            let handler = handler.func.lock().await; // TODO: need to handle this ok() better
+                            let handler = handler.func.read().await; // TODO: need to handle this ok() better
                             let (request, handler_response) = handler(request);
                             let (_, potential_response) = handle_middleware(request, outerwares).await;
                             match potential_response {
