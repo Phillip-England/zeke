@@ -1,9 +1,10 @@
 use std::{collections::HashMap, fmt::Debug};
-use serde::{Serialize, Deserialize};
+use dashmap::DashMap;
 
 use crate::http::response::PotentialResponse;
 
-pub type Context = HashMap<String, String>;
+pub type Context = DashMap<String, String>;
+pub type Headers = DashMap<String, String>;
 
 pub trait Contextable: Send + Sync + 'static {
     fn key(&self) -> &'static str;
@@ -11,14 +12,14 @@ pub trait Contextable: Send + Sync + 'static {
 
 pub type RequestBuffer = [u8; 1024];
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct Request {
     pub method_and_path: String,
     pub method: String,
     pub path: String,
     pub protocol: String,
     pub body: String,
-    pub headers: HashMap<String, String>,
+    pub headers: Headers,
     pub context: Context,
 }
 
@@ -33,8 +34,8 @@ impl Request {
             path: "".to_string(),
             protocol: "".to_string(),
             body: "".to_string(),
-            headers: HashMap::new(),
-            context: HashMap::new(),
+            headers: DashMap::new(),
+            context: DashMap::new(),
         };
         let end = request_bytes.iter().position(|&x| x == 0).unwrap_or(request_bytes.len());
         let request_string = String::from_utf8(request_bytes[..end].to_vec());
