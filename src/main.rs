@@ -2,6 +2,8 @@
 
 
 
+use std::env;
+
 use zeke::http::router::{Route, Router};
 
 use zeke::examples::{
@@ -15,6 +17,12 @@ use zeke::tests::http::http_test;
 #[tokio::main]
 async fn main() {
 
+    dotenv::dotenv().ok();
+
+    let host = match env::var("TEST_HOST") {
+        Ok(value) => value,
+        Err(_) => "127.0.0.1:8080".to_string(),
+    };
 
     let host = "127.0.0.1:8080";
 	let mut r = Router::new();
@@ -27,12 +35,10 @@ async fn main() {
         .group(mw_group_trace())
     );
 
-    // Spawn a new task for the http_test function
     let http_test_task = tokio::spawn(async {
-        http_test(host).await;
+        http_test(host.to_string()).await;
     });
 
-    // Spawn the server as another task
     let server_task = tokio::spawn(async move {
         match r.serve(host).await {
             Some(e) => println!("Error: {:?}", e),
@@ -40,7 +46,6 @@ async fn main() {
         }
     });
 
-    // Use tokio::join! to wait for both tasks to complete
     let _ = tokio::join!(http_test_task, server_task);
 
 }

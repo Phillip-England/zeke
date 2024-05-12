@@ -14,3 +14,4 @@ serde_json = { version = "1.0" }
 chrono = "0.4"
 dashmap = "5.5.3"
 reqwest = "0.12.4"
+dotenv = "0.15"
