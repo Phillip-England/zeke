@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 use std::io::Error;
 
 use tokio::sync::Mutex;
@@ -8,9 +8,11 @@ use crate::http::middleware::{Middlewares, Middleware, MiddlewareGroup};
 use crate::http::handler::Handler;
 use crate::http::socket::connect_socket;
 
+use dashmap::DashMap;
+
 pub type RouteHandler = (Handler, Middlewares, Middlewares);
 
-pub type Routes = HashMap<&'static str, Arc<Mutex<RouteHandler>>>;
+pub type Routes = DashMap<&'static str, Arc<Mutex<RouteHandler>>>;
 
 
 pub struct Router {
@@ -20,7 +22,7 @@ pub struct Router {
 impl Router {
     pub fn new() -> Router {
         Router {
-            routes: HashMap::new(),
+            routes: DashMap::new(),
         }
     }
     pub fn add(self: &mut Router, route: Route) -> &mut Router {

@@ -14,7 +14,7 @@ pub fn mw_trace() -> Middleware {
         let trace_encoded = serde_json::to_string(&trace);
         match trace_encoded {
             Ok(trace_encoded) => {
-                request.set_context( AppContext::Trace, trace_encoded);
+                request.set_context(AppContext::Trace, trace_encoded);
                 return None;
             },
             Err(_) => {

@@ -1,9 +1,9 @@
 use std::time::Duration;
 use std::sync::{Arc, PoisonError};
 
-use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::{TcpListener, TcpStream}, time::timeout, sync::{Mutex, MutexGuard}};
+use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::{TcpListener, TcpStream}, time::timeout, sync::MutexGuard};
 
-use crate::http::router::{Router, RouteHandler};
+use crate::http::router::Router;
 use crate::http::middleware::Middlewares;
 use crate::http::response::{Response, ResponseBytes, PotentialResponse};
 use crate::http::request::{Request, RequestBuffer};
@@ -81,7 +81,7 @@ pub async fn handle_connection(socket: TcpStream, router: Arc<Router>) -> (TcpSt
 }
 
 pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialResponse {
-    let route_handler: Option<&Arc<Mutex<RouteHandler>>> = router.routes.get(request.method_and_path.as_str());
+    let route_handler = router.routes.get(request.method_and_path.as_str());
     match route_handler {
         Some(route_handler) => {
             let potential_route: Result<MutexGuard<(Handler, Middlewares, Middlewares)>, PoisonError<MutexGuard<(Handler, Middlewares, Middlewares)>>> = Ok(route_handler.lock().await); // TODO: need to handle this ok() better
@@ -127,7 +127,7 @@ pub async fn handle_middleware(mut request: Request, middlewares: &Middlewares) 
         return (request, None);
     };
     for middleware in middlewares {
-        let middleware:MutexGuard<Box<dyn Fn(&mut Request) -> Option<Response> + Sync + Send>>  = middleware.func.lock().await; // TODO: need to handle this ok() better
+        let middleware = middleware.func.read().await;
         let potential_response = middleware(&mut request);
         match potential_response {
             Some(response) => {

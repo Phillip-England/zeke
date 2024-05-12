@@ -1,6 +1,6 @@
 
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 
 use crate::http::request::Request;
 use crate::http::response::Response;
@@ -11,7 +11,7 @@ pub type MiddlewareFunc = dyn Fn(&mut Request) -> Option<Response> + Send + Sync
 // pub type Middleware = Arc<Mutex<MiddlewareFunc>>;
 
 pub struct Middleware {
-    pub func: Arc<Mutex<Box<dyn Fn(&mut Request) -> Option<Response> + Send + Sync + 'static>>>,
+    pub func: Arc<RwLock<Box<dyn Fn(&mut Request) -> Option<Response> + Send + Sync + 'static>>>,
 }
 
 impl Middleware {
@@ -20,7 +20,7 @@ impl Middleware {
         F: Fn(&mut Request) -> Option<Response> + Send + Sync + 'static,
     {
         Middleware {
-            func: Arc::new(Mutex::new(Box::new(f))),
+            func: Arc::new(RwLock::new(Box::new(f))),
         }
     }
 }
