@@ -10,9 +10,6 @@ use crate::http::request::{Request, RequestBuffer};
 use crate::http::handler::Handler;
 
 
-
-
-
 pub async fn connect_socket(listener: &TcpListener, router: Arc<Router>) {
 	let socket_result = listener.accept().await;
     match socket_result {

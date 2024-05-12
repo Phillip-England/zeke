@@ -1,4 +1,5 @@
 pub mod http;
+pub mod examples;
 
 pub use http::router::{Router, Route};
 pub use http::handler::Handler;
