@@ -5,9 +5,9 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use zeke::http::{
-    context::{get_context, set_context, Contextable}, 
     handler::Handler, 
-    middleware::{Middleware, MiddlewareGroup}, 
+    middleware::{Middleware, MiddlewareGroup},
+    request::Contextable,
     response::Response, 
     router::{Route, Router},
 };
@@ -71,7 +71,7 @@ async fn main() {
             let trace_encoded = serde_json::to_string(&trace);
             match trace_encoded {
                 Ok(trace_encoded) => {
-                    set_context(request, AppContext::Trace, trace_encoded);
+                    request.set_context( AppContext::Trace, trace_encoded);
                     return None;
                 },
                 Err(_) => {
@@ -87,7 +87,7 @@ async fn main() {
 
     pub fn mw_trace_log() -> Middleware {
         return Middleware::new(|request| {
-            let trace = get_context(&request.context, AppContext::Trace);
+            let trace = request.get_context(AppContext::Trace);
             if trace == "" {
                 return Some(Response::new(500, "trace not found"));
             }

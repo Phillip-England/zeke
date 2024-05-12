@@ -1,11 +1,13 @@
 use std::{collections::HashMap, fmt::Debug};
 use serde::{Serialize, Deserialize};
 
-use crate::http::response::Response;
-use crate::http::context::Context;
+use crate::http::response::PotentialResponse;
 
-use super::response::PotentialResponse;
+pub type Context = HashMap<String, String>;
 
+pub trait Contextable: Send + Sync + 'static {
+    fn key(&self) -> &'static str;
+} 
 
 pub type RequestBuffer = [u8; 1024];
 
@@ -84,83 +86,32 @@ impl Request {
             }
         }
     }
-}
 
-pub fn new_request(buffer: RequestBuffer) -> (Request, Option<Response>) {
-    let request = Request {
-        method_and_path: "".to_string(),
-        method: "".to_string(),
-        path: "".to_string(),
-        protocol: "".to_string(),
-        body: "".to_string(),
-        headers: HashMap::new(),
-        context: HashMap::new(),
-    };
-    let (parsed_request, potential_response) = parse(request, buffer);
-    return (parsed_request, potential_response);
-}
-
-/// TODO: Ensure that headers are parsed correctly. We need to test this.
-pub fn parse(mut request: Request, buffer: RequestBuffer) -> (Request, Option<Response>) {
-    let end = buffer.iter().position(|&x| x == 0).unwrap_or(buffer.len());
-    let request_string = String::from_utf8(buffer[..end].to_vec());
-    match request_string {
-        Err(_) => {
-            return (request, Some(Response::new(500, "failed to parse request using from_utf8")));
-        }
-        Ok(request_string) => {
-            let lines: Vec<&str> = request_string.lines().collect();
-            for i in 0..lines.len() {
-                let line = lines[i];
-                // method, path, protocol
-                if i == 0 {
-                    let parts = line.split(" ").collect::<Vec<&str>>();
-                    if parts.len() != 3 {
-                        return (request, Some(Response::new(500, "request did not have 3 parts: {method} {path} {protocol}")));
-                    }
-                    let method = parts[0];
-                    let path = parts[1];
-                    let protocol = parts[2];
-                    request.method_and_path = format!("{} {}", method, path);
-                    request.method = method.to_string();
-                    request.path = path.to_string();
-                    request.protocol = protocol.to_string();
-                    continue
-                }
-                // request body
-                if i == lines.len() - 1 {
-                    request.body = line.to_string();
-                    continue
-                }
-                // headers
-                if line.len() == 0 { // empty line
-                    continue
-                }
-                let trimmed_line = line.replace(" ", "");
-                let parts = trimmed_line.split(":").collect::<Vec<&str>>();
-                if parts.len() != 2 {
-                    continue
-                }
-                let key = parts[0];
-                let value = parts[1];
-                request.headers.insert(key.to_string(), value.to_string());
-
-            }
-            return (request, None);
+    pub fn get_header(&self, key: &str) -> String {
+        match self.headers.get(key) {
+            Some(value) => {
+                return value.to_string();
+            },
+            None => {
+                return "".to_string();
+            },
         }
     }
-}
 
-pub fn get_header(request: Request, key: &str) -> (Request, String) {
-    let mut header = "".to_string();
-    match request.headers.get(key) {
-        Some(value) => {
-            header = value.to_string();
-        },
-        None => {
-        },
+    pub fn get_context<K: Contextable>(&self, key: K) -> String {
+        match self.context.get(key.key()) {
+            Some(value) => {
+                return value.to_string();
+            },
+            None => {
+                return "".to_string();
+            },
+        }
     }
-    return (request, header);
-}
 
+    pub fn set_context<K: Contextable>(&mut self, key: K, value: String) {
+        self.context.insert(key.key().to_string(), value.to_string());
+    }
+
+}
 
