@@ -7,7 +7,7 @@ use crate::http::request::Request;
 use crate::http::response::Response;
 
 pub struct Handler {
-    pub func: Arc<RwLock<Box<dyn Fn(Request) -> (Request, Response) + Send + Sync + 'static>>>,
+    pub func: Arc<RwLock<dyn Fn(Request) -> (Request, Response) + Send + Sync + 'static>>,
 } 
 
 impl Handler {
@@ -16,7 +16,7 @@ impl Handler {
         F: Fn(Request) -> (Request, Response) + Send + Sync + 'static,
     {
         Handler {
-            func: Arc::new(RwLock::new(Box::new(f)))
+            func: Arc::new(RwLock::new(f))
         }
     }
 }
