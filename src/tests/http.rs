@@ -1,35 +1,52 @@
 
 
-use std::env;
-
 use crate::tests::timer::Timer;
+use crate::http::request::{Request, HttpMethod};
 
-use super::request::{HttpMethod, HttpRequest};
+
 
 
 pub async fn http_test(host: String) {
-    startup(host).await;
+    startup(&host).await;
+    ten_single_connections(&host);
 }
 
-pub async fn startup(host: String) {
+pub async fn startup(host: &String) {
     let t = Timer::new();
-    let req = HttpRequest::new(&host)
+    let req = Request::new(&host)
         .method(HttpMethod::GET)
         .path("/");
     loop {
         let res = req.send();
         match res {
-            Ok(res) => {
-                println!("Response: {:?}", res);
-                t.print_elasped("startup time");
+            Some(res) => {
+                assert!(res.status == 200);
+                t.print_elasped("startup");
+                break;
+            },
+            None => {
 
-                break
-            },
-            Err(e) => {
-                println!("ping failed: {:?}", e);
-            },
+            }
         }
-        // Intended continuous sending logic or other operations should go here
     }
+}
+
+pub fn ten_single_connections(host: &String) {
+    let t = Timer::new();
+    let req = Request::new(&host)
+        .method(HttpMethod::GET)
+        .path("/");
+    for _ in 0..10 {
+        let res = req.send();
+        match res {
+            Some(res) => {
+                assert!(res.status == 200)
+            },
+            None => {
+
+            }
+        }
+    }
+    t.print_elasped("ten_single_connections");
 }
 

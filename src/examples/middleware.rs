@@ -18,7 +18,10 @@ pub fn mw_trace() -> Middleware {
                 return None;
             },
             Err(_) => {
-                return Some(Response::new(500, "failed to encode trace"));
+                return Some(Response::new()
+                    .status(500)
+                    .body("failed to encode trace")
+                );
             }
         }
     });
@@ -28,11 +31,14 @@ pub fn mw_trace_log() -> Middleware {
     return Middleware::new(|request| {
         let trace = request.get_context(AppContext::Trace);
         if trace == "" {
-            return Some(Response::new(500, "trace not found"));
+            return Some(Response::new()
+                .status(500)
+                .body("failed to get trace")
+            );
         }
         let trace: HttpTrace = serde_json::from_str(&trace).unwrap();
         let elapsed_time = trace.get_time_elapsed();
-        let log_message = format!("[{}][{}][{}]", request.method, request.path, elapsed_time);
+        let log_message = format!("[{:?}][{}][{}]", request.method, request.path, elapsed_time);
         println!("{}", log_message);
         return None;
     });
