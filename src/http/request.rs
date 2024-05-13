@@ -1,7 +1,6 @@
 use std::str;
-use std::{fmt::Debug, io::{self, Read, Write}, net::TcpStream};
+use std::{fmt::Debug, io::{Read, Write}, net::TcpStream};
 use dashmap::DashMap;
-use io::Result;
 
 use crate::http::response::{PotentialResponse, Response};
 

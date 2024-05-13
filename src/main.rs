@@ -28,11 +28,11 @@ async fn main() {
 	let mut r = Router::new();
 
     r.add(Route::new("GET /", handle_home())
-        .group(mw_group_trace())
+        // .group(mw_group_trace())
     );
 
     r.add(Route::new("GET /about", handle_about())
-        .group(mw_group_trace())
+        // .group(mw_group_trace())
     );
 
     let http_test_task = tokio::spawn(async {
