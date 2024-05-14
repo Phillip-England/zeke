@@ -3,17 +3,9 @@ use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::Path;
 
-pub enum TestLogs {
-    HttpTest,
-}
+use crate::tests::test::TestLogs;
 
-impl TestLogs {
-    pub fn as_str(&self) -> &'static str {
-        match *self {
-            TestLogs::HttpTest => "http_test.log",
-        }
-    }
-}
+
 
 pub enum TimerUnit {
     Micros,
@@ -55,7 +47,7 @@ impl Timer {
         let (time, unit) = self.elapsed();
         println!("{}: {}{}", message, time, unit.as_str());
         self.log(TestLogs::HttpTest, message);
-        self.reset();
+        // self.reset();
     }
     pub fn reset(&mut self) {
         self.start_time = std::time::Instant::now();

@@ -7,4 +7,4 @@ pub use http::handler::Handler;
 pub use http::response::Response;
 pub use http::middleware::{Middleware, MiddlewareGroup};
 
-pub use tests::http::http_test;
+pub use tests::test::test;

@@ -11,7 +11,7 @@ use zeke::examples::{
     middleware::mw_group_trace,
 };
 
-use zeke::tests::http::http_test;
+use zeke::tests::test::test;
 
 
 #[tokio::main]
@@ -36,7 +36,7 @@ async fn main() {
     );
 
     let http_test_task = tokio::spawn(async {
-        http_test(host.to_string()).await;
+        test(host.to_string()).await;
     });
 
     let server_task = tokio::spawn(async move {
