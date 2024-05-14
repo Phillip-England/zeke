@@ -9,14 +9,14 @@ use crate::http::request::{Request, HttpMethod};
 
 
 pub async fn http_test(host: String) {
-    let timer = Timer::new();
+    let mut timer = Timer::new();
     timer.clean_log(TestLogs::HttpTest);
-    let (host, timer) = startup(host, timer).await;
-    connect(host, timer, 10000, "10000 single connections").await;
-    connect_concurrent(&host, &timer, 10, 10000, "10000 concurrent connections").await;
+    startup(&host, &mut timer).await;
+    connect(&host, &mut timer, 10000, "10000 single connections").await;
+    connect_concurrent(&host, &mut timer, 10, 10000, "10000 concurrent connections").await;
 }
 
-pub async fn startup(host: String, timer: Timer) -> (String, Timer) {
+pub async fn startup(host: &String, timer: &mut Timer) {
     let req = Request::new(&host)
         .method(HttpMethod::GET)
         .path("/");
@@ -32,11 +32,10 @@ pub async fn startup(host: String, timer: Timer) -> (String, Timer) {
             }
         }
     }
-    timer = timer.print_elasped("startup");
-    return (host, timer)
+    timer.print_elasped("startup");
 }
 
-pub async fn connect(host: String, timer: Timer, number_of_connections: u32, message: &str) -> (String, Timer) {
+pub async fn connect(host: &String, timer: &mut Timer, number_of_connections: u32, message: &str) {
     let req = Request::new(&host)
         .method(HttpMethod::GET)
         .path("/");
@@ -52,10 +51,9 @@ pub async fn connect(host: String, timer: Timer, number_of_connections: u32, mes
         }
     }
     timer.print_elasped(message);
-    return (host, timer)
 }
 
-pub async fn connect_concurrent(host: &String, timer: &Timer, num_threads: usize, connections_per_thread: u32, message: &str) {
+pub async fn connect_concurrent(host: &String, timer: &mut Timer, num_threads: usize, connections_per_thread: u32, message: &str) {
     let tasks: Vec<_> = (0..num_threads).map(|_| {
         let host = host.clone();
         task::spawn(async move {

@@ -43,7 +43,7 @@ impl Timer {
             log_root_dir: "logs".to_string(),
         }
     }
-    pub fn elapsed(self) -> (u128, TimerUnit) {
+    pub fn elapsed(&self) -> (u128, TimerUnit) {
         let elapsed_micros = self.start_time.elapsed().as_micros();
         if elapsed_micros < 1000 {
             return (elapsed_micros, TimerUnit::Micros);
@@ -51,14 +51,13 @@ impl Timer {
         let elapsed_millis = self.start_time.elapsed().as_millis();
         return (elapsed_millis, TimerUnit::Millis);
     }
-    pub fn print_elasped(self, message: &str) -> Timer {
+    pub fn print_elasped(&mut self, message: &str) {
         let (time, unit) = self.elapsed();
         println!("{}: {}{}", message, time, unit.as_str());
         self.log(TestLogs::HttpTest, message);
         self.reset();
-        return self;
     }
-    pub fn reset(mut self) {
+    pub fn reset(&mut self) {
         self.start_time = std::time::Instant::now();
     }
     pub fn clean_log(&self, file_name: TestLogs) {
@@ -76,7 +75,7 @@ impl Timer {
             .open(&file_path)
             .expect("Unable to open file");
     }
-    pub fn log(self, file_name: TestLogs, message: &str) {
+    pub fn log(&self, file_name: TestLogs, message: &str) {
         let file_path = format!("{}/{}", self.log_root_dir, file_name.as_str());
         let directory = Path::new(&self.log_root_dir);
     
