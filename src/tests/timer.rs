@@ -5,7 +5,71 @@ use std::path::Path;
 
 use crate::tests::test::TestLogs;
 
+pub type Times = Vec<Time>;
 
+pub fn print_times(times: &Times) {
+    for time in times {
+        println!("{}{}", time.time, time.unit.as_str());
+    }
+}
+
+pub fn log_times(times: &Times, file_name: TestLogs) {
+    let timer = Timer::new();
+    for index in 0..times.len() {
+        let time = &times[index];
+        timer.log(file_name, &format!("{}. {}{}", index, time.time, time.unit.as_str()));
+    }
+}
+
+pub async fn get_time_range(request_times: &Vec<Time>) -> (Time, Time) {
+    let mut min = (0, 100000);
+    let mut max = (0, 0);
+    for index in 0..request_times.len() {
+        let time = &request_times[index];
+        let micros = time.get_as_micros();
+        if micros < min.1 {
+            min = (index, micros);
+        }
+        if micros > max.1 {
+            max = (index, micros);
+        }
+    }
+    let min_time = request_times[min.0].clone();
+    let max_time = request_times[max.0].clone();
+    return (min_time, max_time);
+}
+
+
+#[derive(Debug, Clone)]
+pub struct Time {
+    pub time: u128,
+    pub unit: TimerUnit,
+}
+
+impl Time {
+    pub fn new(time: u128, unit: TimerUnit) -> Self {
+        Self {
+            time,
+            unit,
+        }
+    }
+    pub fn get_as_micros(&self) -> u128 {
+        match self.unit {
+            TimerUnit::Micros => self.time,
+            TimerUnit::Millis => self.time * 1000,
+        }
+    }
+    pub fn log(&self, file_name: TestLogs, message: &str) {
+        let timer = Timer::new();
+        timer.log(file_name, &format!("{}: {}{}", message, self.time, self.unit.as_str()));
+    }
+}
+
+impl Copy for Time {
+
+}
+
+#[derive(Debug, Clone)]
 
 pub enum TimerUnit {
     Micros,
@@ -21,6 +85,11 @@ impl TimerUnit {
     }
 }
 
+impl Copy for TimerUnit {
+
+}
+
+#[derive(Debug, Clone)]
 pub struct Timer {
     start_time: std::time::Instant,
     log_root_dir: String,
@@ -35,19 +104,13 @@ impl Timer {
             log_root_dir: "logs".to_string(),
         }
     }
-    pub fn elapsed(&self) -> (u128, TimerUnit) {
+    pub fn elapsed(&self) -> Time {
         let elapsed_micros = self.start_time.elapsed().as_micros();
         if elapsed_micros < 1000 {
-            return (elapsed_micros, TimerUnit::Micros);
+            return Time::new(elapsed_micros, TimerUnit::Micros);
         }
         let elapsed_millis = self.start_time.elapsed().as_millis();
-        return (elapsed_millis, TimerUnit::Millis);
-    }
-    pub fn print_elasped(&mut self, message: &str) {
-        let (time, unit) = self.elapsed();
-        println!("{}: {}{}", message, time, unit.as_str());
-        self.log(TestLogs::HttpTest, message);
-        // self.reset();
+        return Time::new(elapsed_millis, TimerUnit::Millis);
     }
     pub fn reset(&mut self) {
         self.start_time = std::time::Instant::now();
@@ -82,7 +145,6 @@ impl Timer {
             .open(&file_path)
             .expect("Unable to open file");
     
-        let (time, unit) = self.elapsed();
-        writeln!(file, "{}: {}{}", message, time, unit.as_str()).expect("Unable to write to file");
+        writeln!(file, "{}", message).expect("Unable to write to file");
     }
 }
