@@ -83,7 +83,7 @@ impl Request {
             self.host
         )
     }
-    pub fn send_raw(&self, raw_request: String) -> Option<Response> {
+    pub fn send_raw(&self, raw_request: &String) -> Option<Response> {
         let stream = TcpStream::connect(&self.get_host());
         match stream {
             Ok(mut stream) => {

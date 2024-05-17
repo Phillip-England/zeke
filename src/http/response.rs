@@ -23,6 +23,22 @@ impl Response {
         };
         return res;
     }
+    pub fn raw(&self) -> String {
+        let mut header_string = String::new(); // Mutable string to accumulate headers
+        for header in &self.headers {
+            header_string.push_str(&format!("{}: {}\r\n", header.0, header.1));
+        }
+        // Now create the full response with status line, headers, and body
+        let full_response = format!(
+            "{} {}\r\n{}Content-Length: {}\r\n\r\n{}",
+            self.protocol, 
+            self.status,
+            header_string,
+            self.body.len(), // This assumes 'body' is a String or similar
+            self.body
+        );
+        return full_response;
+    }
     pub fn status(mut self, status: u16) -> Self {
         self.status = status;
         return self;

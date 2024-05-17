@@ -1,2 +1,40 @@
-wait_for_startup: "555μs"
-missing_protocol: test passed "316μs"
+STARTUP: 476μs
+	req: "GET / HTTP/1.1\r\nHost: 127.0.0.1:8080\r\nConnection: close\r\n\r\n"
+	res: "HTTP/1.1 200\r\nContent-Length: 0\r\n\r\n"
+
+
+PING 0: 267μs
+	req: "GET / HTTP/1.1\r\nHost: 127.0.0.1:8080\r\nConnection: close\r\n\r\n"
+	res: "HTTP/1.1 200\r\nContent-Length: 0\r\n\r\n"
+
+
+PING 1: 331μs
+	req: "GET / HTTP/1.1\r\nHost: 127.0.0.1:8080\r\nConnection: close\r\n\r\n"
+	res: "HTTP/1.1 200\r\nContent-Length: 0\r\n\r\n"
+
+
+PING 2: 347μs
+	req: "GET / HTTP/1.1\r\nHost: 127.0.0.1:8080\r\nConnection: close\r\n\r\n"
+	res: "HTTP/1.1 200\r\nContent-Length: 0\r\n\r\n"
+
+
+INVALID METHOD: 253μs
+	req: "GE / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
+	res: "HTTP/1.1 400\r\nContent-Length: 0\r\n\r\n"
+
+
+MISSING METHOD: 259μs
+	req: "/ HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
+	res: "HTTP/1.1 400\r\nContent-Length: 0\r\n\r\n"
+
+
+INVALID PROTOCOL: 285μs
+	req: "GET .1#####@@##@#\r\nHost: localhost\r\nConnection: close\r\n\r\n"
+	res: "HTTP/1.1 400\r\nContent-Length: 0\r\n\r\n"
+
+
+MISSING PROTOCOL: 286μs
+	req: "GET / \r\nHost: localhost\r\nConnection: close\r\n\r\n"
+	res: "HTTP/1.1 400\r\nContent-Length: 0\r\n\r\n"
+
+
