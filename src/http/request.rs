@@ -83,6 +83,44 @@ impl Request {
             self.host
         )
     }
+    pub fn send_raw(&self, raw_request: String) -> Option<Response> {
+        let stream = TcpStream::connect(&self.get_host());
+        match stream {
+            Ok(mut stream) => {
+                match stream.write_all(raw_request.as_bytes()) {
+                    Ok(_) => {
+                        let mut response_bytes = Vec::new();
+                        match stream.read_to_end(&mut response_bytes) {
+                            Ok(_) => {
+                                let response = Response::new_from_bytes(&response_bytes);
+                                match response {
+                                    Some(response) => {
+                                        return Some(response);
+                                    },
+                                    None => {
+                                        return None;
+                                    },
+                                }
+                            },
+                            Err(_) => {
+                                return None;
+                            },
+                        }
+
+                    },
+                    Err(_) => {
+                        return None;
+                    },
+                }
+            },
+            Err(_) => {
+                return None;
+            },
+        }
+    }
+
+
+
     pub fn send(&self) -> Option<Response> {
         let stream = TcpStream::connect(&self.get_host());
         match stream {

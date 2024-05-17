@@ -70,7 +70,6 @@ impl Copy for Time {
 }
 
 #[derive(Debug, Clone)]
-
 pub enum TimerUnit {
     Micros,
     Millis,
@@ -103,6 +102,14 @@ impl Timer {
             start_time: std::time::Instant::now(),
             log_root_dir: "logs".to_string(),
         }
+    }
+    pub fn elapsed_message(&self) -> String {
+        let elapsed_micros = self.start_time.elapsed().as_micros();
+        if elapsed_micros < 1000 {
+            return format!("{}{}", elapsed_micros, "μs");
+        }
+        let elapsed_millis = self.start_time.elapsed().as_millis();
+        return format!("{}{}", elapsed_millis, "ms");
     }
     pub fn elapsed(&self) -> Time {
         let elapsed_micros = self.start_time.elapsed().as_micros();

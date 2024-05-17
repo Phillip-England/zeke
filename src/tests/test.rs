@@ -1,13 +1,12 @@
 
 
-use std::sync::Arc;
 
-use tokio::task;
+use chrono::format;
 
 use crate::tests::timer::{get_time_range, log_times, Timer};
 use crate::http::request::{Request, HttpMethod};
 
-use super::timer::{Time, TimerUnit, Times};
+use super::timer::{Time, Times};
 
 pub type TestResult = Result<(), String>;
 
@@ -52,24 +51,15 @@ pub async fn test(host: String) {
     let timer = Timer::new();
     timer.clean_log(TestLogs::HttpTest);
 
-    // waiting for our server to startup
-    let time = wait_for_startup(host.clone()).await;  
-    time.log(TestLogs::HttpTest, "startup time");
-
-    // pinging the host 10 times
-    // if we get anything but 200s, we will fail
-    let times = ping(host.clone(), 10).await; 
-
-    let (min_time, max_time) = get_time_range(&times).await;
-    timer.log(TestLogs::HttpTest, "time range for 10 pings");
-    timer.log(TestLogs::HttpTest, &format!("min time: {}{}", min_time.time, min_time.unit.as_str()));
-    timer.log(TestLogs::HttpTest, &format!("max time: {}{}", max_time.time, max_time.unit.as_str()));
-
-    log_times(&times, TestLogs::HttpTest);
+    wait_for_startup(host.clone()).await;  
+    ping(host.clone(), 10).await; 
+    invalid_method(host.clone()).await;
+    missing_method(host.clone()).await;
+    missing_protocol(host.clone()).await;
 
 }
 
-pub async fn wait_for_startup(host: String) -> Time {
+pub async fn wait_for_startup(host: String) {
     let t = Timer::new();
     let req = Request::new(&host)
         .method(HttpMethod::GET)
@@ -79,6 +69,7 @@ pub async fn wait_for_startup(host: String) -> Time {
         match res {
             Some(res) => {
                 assert!(res.status == 200);
+                
                 break;
             },
             None => {
@@ -86,12 +77,12 @@ pub async fn wait_for_startup(host: String) -> Time {
             }
         }
     }
-    t.elapsed()
+    let message = format!("wait_for_startup: {:?}", t.elapsed_message());
+    t.log(TestLogs::HttpTest, &message);
 }
 
-pub async fn ping(host: String, attempts: i32) -> Times {
-    let mut request_times: Times = vec![];
-    for _ in 0..attempts {
+pub async fn ping(host: String, attempts: i32) {
+    for i in 0..attempts {
         let t = Timer::new();
         let req = Request::new(&host)
             .method(HttpMethod::GET)
@@ -100,13 +91,61 @@ pub async fn ping(host: String, attempts: i32) -> Times {
         match res {
             Some(res) => {
                 assert!(res.status == 200);
+                let message = format!("ping {}: {:?}", i, t.elapsed_message());
+                t.log(TestLogs::HttpTest, &message);
             },
             None => {
                 assert!(false, "ping: test failed, no response")
             }
         }
-        request_times.push(t.elapsed());
     }
-    request_times
 }
 
+pub async fn invalid_method(host: String)  {
+    let t = Timer::new();    
+    let req = Request::new(&host);
+    let req_malformed_method = "GE / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n".to_string();
+    let res = req.send_raw(req_malformed_method);
+    match res {
+        Some(res) => {
+            assert!(res.status == 400);
+        },
+        None => {
+            assert!(false, "invalid_method: test failed");
+        }
+    }
+    t.log(TestLogs::HttpTest, &format!("invalid_method: test passed {:?}", t.elapsed_message()));
+}
+
+pub async fn missing_method(host: String) {
+    let t = Timer::new();    
+    let req = Request::new(&host);
+    let req_missing_method = "/ HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n".to_string();
+    let res = req.send_raw(req_missing_method);
+    match res {
+        Some(res) => {
+            assert!(res.status == 400);
+        },
+        None => {
+            assert!(false, "missing_method: test failed");
+        }
+    }
+    t.log(TestLogs::HttpTest, &format!("missing_method: test passed {:?}", t.elapsed_message()));
+}
+
+pub async fn missing_protocol(host: String) {
+    let t = Timer::new();    
+    let req = Request::new(&host);
+    let req_missing_protocol = "GET / \r\nHost: localhost\r\nConnection: close\r\n\r\n".to_string();
+    let res = req.send_raw(req_missing_protocol);
+    match res {
+        Some(res) => {
+            assert!(res.status == 400);
+        },
+        None => {
+            assert!(false, "missing_protocol: test failed");
+        }
+    }
+
+    t.log(TestLogs::HttpTest, &format!("missing_protocol: test passed {:?}", t.elapsed_message()));
+}
