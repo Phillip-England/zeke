@@ -68,6 +68,20 @@ impl Request {
         self.path = path.to_string();
         self
     }
+    pub fn get_header(&self, key: &str) -> String {
+        match self.headers.get(key) {
+            Some(value) => {
+                return value.to_string();
+            },
+            None => {
+                return "".to_string();
+            },
+        }
+    }
+    pub fn header(self, key: &str, value: &str) -> Self {
+        self.headers.insert(key.to_string(), value.to_string());
+        self
+    }
     pub fn get_url(&self) -> String {
         self.host.clone() + &self.path
     }
@@ -75,13 +89,19 @@ impl Request {
         self.host.clone()
     }
     pub fn get_request_string(&self) -> String {
-        format!(
-            "{} {} {}\r\nHost: {}\r\nConnection: close\r\n\r\n",
+        let mut headers_str = String::new();
+        for header in self.headers.iter() {
+            headers_str.push_str(&format!("{}: {}\r\n", header.key(), header.value()));
+        }
+        let request = format!(
+            "{} {} {}\r\n{}\r\n{}",
             self.method.as_str(),
             self.path,
             self.protocol,
-            self.host
-        )
+            headers_str,
+            self.body
+        );
+        return request;
     }
     pub fn send_raw(&self, raw_request: &String) -> Option<Response> {
         let stream = TcpStream::connect(&self.get_host());
@@ -257,17 +277,6 @@ impl Request {
                 }
                 return (request, None);
             }
-        }
-    }
-
-    pub fn get_header(&self, key: &str) -> String {
-        match self.headers.get(key) {
-            Some(value) => {
-                return value.to_string();
-            },
-            None => {
-                return "".to_string();
-            },
         }
     }
 

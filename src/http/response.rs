@@ -76,7 +76,16 @@ impl Response {
                             }
                         }
                         response.protocol = protocol.to_string();
-
+                    }
+                    // headers
+                    else if line.contains(":") {
+                        let parts: Vec<&str> = line.split(":").collect();
+                        if parts.len() < 2 {
+                            return None;
+                        }
+                        let key = parts[0].trim();
+                        let value = parts[1].trim();
+                        response.headers.push((key.to_string(), value.to_string()));
                     }
                 }
                 return Some(response);
@@ -102,6 +111,14 @@ impl Response {
     pub fn set_header(mut self, key: &str, value: &str) -> Self {
         self.headers.push((key.to_string(), value.to_string()));
         return self;
+    }
+    pub fn get_header(&self, key: &str) -> Option<&str> {
+        for header in &self.headers {
+            if header.0 == key {
+                return Some(&header.1);
+            }
+        }
+        return None;
     }
 
 }

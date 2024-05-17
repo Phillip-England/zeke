@@ -7,7 +7,9 @@ pub fn handle_home() -> Handler {
         let response = Response::new()
             .status(200)
             .body("<h1>Home</h1><a href='/about'>About</a>")
-            .set_header("Content-Type", "text/html");
+            .set_header("Content-Type", "text/html")
+            .set_header("Zeke", "zeke and his mom rule!")
+            .set_header("Zekes-Mom", "so does zeke's mom");
         return (request, response);
     });
 }

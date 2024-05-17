@@ -171,14 +171,14 @@ pub async fn read_socket(mut socket: TcpStream) -> (TcpStream, RequestBuffer, Po
             // Handle specific I/O errors if needed
             return (socket, buffer, Some(Response::new()
                 .status(500)
-                .body(&format!("Failed to read from socket: {}", e))
+                .body(&format!("failed to read from socket: {}", e))
             ));
         },
         Err(_) => {
             // Timeout
             return (socket, buffer, Some(Response::new()
                 .status(408)
-                .body("Read timeout")
+                .body("read timeout")
             ));
         },
     }
@@ -193,14 +193,14 @@ pub async fn write_socket(mut socket: TcpStream, response_bytes: &[u8]) -> (TcpS
             // TODO: set up logging
             return (socket, Some(Response::new()
                 .status(500)
-                .body(&format!("Failed to write to socket: {}", e))
+                .body(&format!("failed to write to socket: {}", e))
             ));
         },
         Err(_) => {
             // Timeout
             return (socket, Some(Response::new()
                 .status(408)
-                .body("Write timeout")
+                .body("write timeout")
             ));
         },
     }

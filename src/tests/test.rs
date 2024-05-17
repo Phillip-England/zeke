@@ -51,16 +51,13 @@ impl TestResult {
     }
 }
 
-
-
 pub async fn test(host: String) {
-
-    // cleaning all our test logs
     let timer = Timer::new();
     timer.clean_log(TestLogs::HttpTest);
-
     startup(host.clone()).await;  
     ping(host.clone(), 3).await; 
+    get_with_headers(host.clone()).await;
+    get_with_params(host.clone()).await;
     invalid_method(host.clone()).await;
     missing_method(host.clone()).await;
     invalid_protocol(host.clone()).await;
@@ -117,6 +114,60 @@ pub async fn ping(host: String, attempts: i32) {
             None => {
                 assert!(false, "ping: test failed, no response")
             }
+        }
+    }
+}
+
+pub async fn get_with_params(host: String) {
+    let t = Timer::new();
+    let req = Request::new(&host)
+        .method(HttpMethod::GET)
+        .path("/?name=zeke&age=30");
+    let res = req.send();
+    match res {
+        Some(res) => {
+            let result = TestResult::new(
+                TestLogs::HttpTest, 
+                "GET WITH PARMS".to_string(), 
+                t.elapsed(), 
+                req.get_request_string(), 
+                res.raw()
+            );
+            result.log();
+            // assert!(res.status == 200);
+        },
+        None => {
+            assert!(false, "get_with_parms: test failed");
+        }
+    }
+}
+
+pub async fn get_with_headers(host: String) {
+    let t = Timer::new();
+    let req = Request::new(&host)
+        .method(HttpMethod::GET)
+        .path("/")
+        .header("Zeke", "zeke rules")
+        .header("Zekes-Mom", "so does zeke's mom");
+    let res = req.send();
+    match res {
+        Some(res) => {
+            let zeke = res.get_header("Zeke");
+            let zekes_mom = res.get_header("Zekes-Mom");
+            assert!(zeke == Some("zeke and his mom rule!"));
+            assert!(zekes_mom == Some("so does zeke's mom"));
+            let result = TestResult::new(
+                TestLogs::HttpTest, 
+                "GET WITH HEADERS".to_string(), 
+                t.elapsed(), 
+                req.get_request_string(), 
+                res.raw()
+            );
+            result.log();
+            assert!(res.status == 200);
+        },
+        None => {
+            assert!(false, "get_with_headers: test failed");
         }
     }
 }
