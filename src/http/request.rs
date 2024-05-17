@@ -53,7 +53,7 @@ impl Request {
             method_and_path: "".to_string(),
             method: HttpMethod::GET,
             path: "".to_string(),
-            protocol: "".to_string(),
+            protocol: "HTTP/1.1".to_string(),
             body: "".to_string(),
             headers: DashMap::new(),
             context: DashMap::new(),
@@ -202,6 +202,15 @@ impl Request {
                         let method = parts[0];
                         let path = parts[1];
                         let protocol = parts[2];
+                        match protocol {
+                            "HTTP/1.1" => {},
+                            _ => {
+                                return (request, Some(Response::new()
+                                    .status(400)
+                                    .body("malformed request: invalid protocol")
+                                ));
+                            },
+                        }
                         request.method_and_path = format!("{} {}", method, path);
                         match method {
                             "GET" => {

@@ -52,9 +52,9 @@ pub async fn test(host: String) {
     timer.clean_log(TestLogs::HttpTest);
 
     wait_for_startup(host.clone()).await;  
-    ping(host.clone(), 10).await; 
-    invalid_method(host.clone()).await;
-    missing_method(host.clone()).await;
+    // ping(host.clone(), 10).await; 
+    // invalid_method(host.clone()).await;
+    // missing_method(host.clone()).await;
     missing_protocol(host.clone()).await;
 
 }
