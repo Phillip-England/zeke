@@ -128,16 +128,16 @@ pub async fn get_with_params(host: String) {
         Some(res) => {
             let result = TestResult::new(
                 TestLogs::HttpTest, 
-                "GET WITH PARMS".to_string(), 
+                "GET WITH PARAMS".to_string(), 
                 t.elapsed(), 
                 req.get_request_string(), 
                 res.raw()
             );
             result.log();
-            // assert!(res.status == 200);
+            assert!(res.status == 200, "get_with_params: test failed");
         },
         None => {
-            assert!(false, "get_with_parms: test failed");
+            assert!(false, "get_with_params: test failed");
         }
     }
 }

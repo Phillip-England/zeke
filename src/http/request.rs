@@ -199,7 +199,6 @@ impl Request {
         let request_string = String::from_utf8(request_bytes[..end].to_vec());
         match request_string {
             Err(_) => {
-                // TODO: failed to parse error here
                 return (request, Some(Response::new()
                     .status(400)
                     .body("failed to parse request")
@@ -213,7 +212,6 @@ impl Request {
                     if i == 0 {
                         let parts = line.split(" ").collect::<Vec<&str>>();
                         if parts.len() != 3 {
-                            // TODO: request did not have 3 parts: {method} {path} {protocol}
                             return (request, Some(Response::new()
                                 .status(400)
                                 .body("malformed request: invalid method")
@@ -221,7 +219,28 @@ impl Request {
                         }
                         let method = parts[0];
                         let path = parts[1];
+                        let mut param_string = String::new();
+                        let params = path.split("?").collect::<Vec<&str>>();
+                        if params.len() > 1 {
+                            request.path = params[0].to_string();
+                            request.method_and_path = format!("{} {}", method, params[0]);
+                            param_string = params[1].to_string();
+                        } else {
+                            request.path = path.to_string();
+                            request.method_and_path = format!("{} {}", method, path);
+                        }
+                        let params = param_string.split("&").collect::<Vec<&str>>();
+                        for param in params {
+                            let parts = param.split("=").collect::<Vec<&str>>();
+                            if parts.len() != 2 {
+                                continue
+                            }
+                            let key = parts[0];
+                            let value = parts[1];
+                            request.headers.insert(key.to_string(), value.to_string());
+                        }
                         let protocol = parts[2];
+                        // TODO: figure out how to handle other protocols
                         match protocol {
                             "HTTP/1.1" => {},
                             _ => {
@@ -231,7 +250,6 @@ impl Request {
                                 ));
                             },
                         }
-                        request.method_and_path = format!("{} {}", method, path);
                         match method {
                             "GET" => {
                                 request.method = HttpMethod::GET;
@@ -245,6 +263,9 @@ impl Request {
                             "DELETE" => {
                                 request.method = HttpMethod::DELETE;
                             },
+                            "PATCH" => {
+                                request.method = HttpMethod::PATCH;
+                            },
                             _ => {
                                 return (request, Some(Response::new()
                                     .status(400)
@@ -252,7 +273,6 @@ impl Request {
                                 ));
                             },
                         }
-                        request.path = path.to_string();
                         request.protocol = protocol.to_string();
                         continue
                     }

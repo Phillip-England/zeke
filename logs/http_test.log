@@ -1,49 +1,49 @@
-STARTUP: 473μs
+STARTUP: 2ms
 	req: "GET / HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\nContent-Length: 39\r\nContent-Length: 0\r\n\r\n"
 
 
-PING 0: 397μs
+PING 0: 882μs
 	req: "GET / HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\nContent-Length: 39\r\nContent-Length: 0\r\n\r\n"
 
 
-PING 1: 487μs
+PING 1: 1ms
 	req: "GET / HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\nContent-Length: 39\r\nContent-Length: 0\r\n\r\n"
 
 
-PING 2: 424μs
+PING 2: 1ms
 	req: "GET / HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\nContent-Length: 39\r\nContent-Length: 0\r\n\r\n"
 
 
-GET WITH HEADERS: 446μs
-	req: "GET / HTTP/1.1\r\nZeke: zeke rules\r\nZekes-Mom: so does zeke's mom\r\n\r\n"
+GET WITH HEADERS: 1ms
+	req: "GET / HTTP/1.1\r\nZekes-Mom: so does zeke's mom\r\nZeke: zeke rules\r\n\r\n"
 	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\nContent-Length: 39\r\nContent-Length: 0\r\n\r\n"
 
 
-GET WITH PARMS: 358μs
+GET WITH PARAMS: 1ms
 	req: "GET /?name=zeke&age=30 HTTP/1.1\r\n\r\n"
-	res: "HTTP/1.1 404\r\nContent-Length: 15\r\nContent-Length: 0\r\n\r\n"
+	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\nContent-Length: 39\r\nContent-Length: 0\r\n\r\n"
 
 
-INVALID METHOD: 289μs
+INVALID METHOD: 1ms
 	req: "GE / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
 	res: "HTTP/1.1 400\r\nContent-Length: 33\r\nmalformed request: invalid method\r\nContent-Length: 0\r\n\r\n"
 
 
-MISSING METHOD: 294μs
+MISSING METHOD: 727μs
 	req: "/ HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
 	res: "HTTP/1.1 400\r\nContent-Length: 33\r\nmalformed request: invalid method\r\nContent-Length: 0\r\n\r\n"
 
 
-INVALID PROTOCOL: 327μs
+INVALID PROTOCOL: 312μs
 	req: "GET .1#####@@##@#\r\nHost: localhost\r\nConnection: close\r\n\r\n"
 	res: "HTTP/1.1 400\r\nContent-Length: 33\r\nmalformed request: invalid method\r\nContent-Length: 0\r\n\r\n"
 
 
-MISSING PROTOCOL: 280μs
+MISSING PROTOCOL: 371μs
 	req: "GET / \r\nHost: localhost\r\nConnection: close\r\n\r\n"
 	res: "HTTP/1.1 400\r\nContent-Length: 35\r\nmalformed request: invalid protocol\r\nContent-Length: 0\r\n\r\n"
 
