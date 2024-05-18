@@ -7,7 +7,7 @@ use std::env;
 use zeke::http::router::{Route, Router};
 
 use zeke::examples::{
-    handlers::{handle_home, handle_about},
+    handlers::{handle_home, handle_about, handle_query_params},
     middleware::mw_group_trace,
 };
 
@@ -30,6 +30,8 @@ async fn main() {
     r.add(Route::new("GET /", handle_home())
         .group(mw_group_trace())
     );
+
+    r.add(Route::new("GET /test/query_params", handle_query_params()));
 
     r.add(Route::new("GET /about", handle_about())
         .group(mw_group_trace())

@@ -122,7 +122,7 @@ pub async fn get_with_params(host: String) {
     let t = Timer::new();
     let req = Request::new(&host)
         .method(HttpMethod::GET)
-        .path("/?name=zeke&age=30");
+        .path("/test/query_params");
     let res = req.send();
     match res {
         Some(res) => {
@@ -225,7 +225,6 @@ pub async fn invalid_protocol(host: String) {
     let res = req.send_raw(&req_invalid_protocol);
     match res {
         Some(res) => {
-            println!("{:?}", res);
             let test_result = TestResult::new(
                 TestLogs::HttpTest, 
                 "INVALID PROTOCOL".to_string(), 
