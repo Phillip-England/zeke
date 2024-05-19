@@ -2,12 +2,10 @@
 
 
 
-use std::env;
-
 use zeke::http::router::{Route, Router};
 
 use zeke::examples::{
-    handlers::{handle_home, handle_about, handle_query_params},
+    handlers::{handle_home, handle_about, handle_query_params, handle_post_with_body},
     middleware::mw_group_trace,
 };
 
@@ -19,11 +17,6 @@ async fn main() {
 
     dotenv::dotenv().ok();
 
-    let host = match env::var("TEST_HOST") {
-        Ok(value) => value,
-        Err(_) => "127.0.0.1:8080".to_string(),
-    };
-
     let host = "127.0.0.1:8080";
 	let mut r = Router::new();
 
@@ -31,13 +24,19 @@ async fn main() {
         .group(mw_group_trace())
     );
 
-    r.add(Route::new("GET /test/query_params", handle_query_params()));
+    r.add(Route::new("GET /test/query_params", handle_query_params())
+        .group(mw_group_trace())
+    );
+
+    r.add(Route::new("POST /test/post_with_body", handle_post_with_body())
+        .group(mw_group_trace())
+    );
 
     r.add(Route::new("GET /about", handle_about())
         .group(mw_group_trace())
     );
 
-    let http_test_task = tokio::spawn(async {
+    let test_task = tokio::spawn(async {
         test(host.to_string()).await;
     });
 
@@ -48,7 +47,7 @@ async fn main() {
         }
     });
 
-    let _ = tokio::join!(http_test_task, server_task);
+    let _ = tokio::join!(test_task, server_task);
 
 }
 

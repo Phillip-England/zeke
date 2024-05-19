@@ -1,13 +1,8 @@
 
 
 
-use core::time;
-
-use crate::tests::timer::Timer;
+use crate::tests::timer::{Time, Timer};
 use crate::http::request::{Request, HttpMethod};
-
-use super::timer::Time;
-
 
 #[derive(Debug, Clone)]
 pub enum TestLogs {
@@ -24,6 +19,7 @@ impl TestLogs {
 
 impl Copy for TestLogs {}
 
+#[derive(Debug, Clone)]
 pub struct TestResult {
     pub log_path: TestLogs,
     pub test_name: String,
@@ -62,6 +58,7 @@ pub async fn test(host: String) {
     missing_method(host.clone()).await;
     invalid_protocol(host.clone()).await;
     missing_protocol(host.clone()).await;
+    post_with_body(host.clone()).await;
 
 }
 
@@ -122,7 +119,7 @@ pub async fn get_with_params(host: String) {
     let t = Timer::new();
     let req = Request::new(&host)
         .method(HttpMethod::GET)
-        .path("/test/query_params");
+        .path("/test/query_params?name=zeke&age=your_mom");
     let res = req.send();
     match res {
         Some(res) => {
@@ -262,6 +259,31 @@ pub async fn missing_protocol(host: String) {
         },
         None => {
             assert!(false, "missing_protocol: test failed");
+        }
+    }
+}
+
+pub async fn post_with_body(host: String) {
+    let t = Timer::new();
+    let req = Request::new(&host)
+        .method(HttpMethod::POST)
+        .path("/test/post_with_body")
+        .body("this is a post request");
+    let res = req.send();
+    match res {
+        Some(res) => {
+            let result = TestResult::new(
+                TestLogs::HttpTest, 
+                "POST WITH BODY".to_string(), 
+                t.elapsed(), 
+                req.get_request_string(), 
+                res.raw()
+            );
+            result.log();
+            assert!(res.status == 200);
+        },
+        None => {
+            assert!(false, "post_with_body: test failed");
         }
     }
 }

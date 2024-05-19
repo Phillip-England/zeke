@@ -1,50 +1,55 @@
-STARTUP: 700μs
+STARTUP: 679μs
 	req: "GET / HTTP/1.1\r\n\r\n"
-	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\nContent-Length: 108\r\nContent-Length: 0\r\n\r\n"
+	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\n\r\n"
 
 
-PING 0: 483μs
+PING 0: 368μs
 	req: "GET / HTTP/1.1\r\n\r\n"
-	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\nContent-Length: 108\r\nContent-Length: 0\r\n\r\n"
+	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\n\r\n"
 
 
-PING 1: 443μs
+PING 1: 379μs
 	req: "GET / HTTP/1.1\r\n\r\n"
-	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\nContent-Length: 108\r\nContent-Length: 0\r\n\r\n"
+	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\n\r\n"
 
 
-PING 2: 856μs
+PING 2: 362μs
 	req: "GET / HTTP/1.1\r\n\r\n"
-	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\nContent-Length: 108\r\nContent-Length: 0\r\n\r\n"
+	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\n\r\n"
 
 
-GET WITH HEADERS: 978μs
+GET WITH HEADERS: 472μs
 	req: "GET / HTTP/1.1\r\nZeke: zeke rules\r\nZekes-Mom: so does zeke's mom\r\n\r\n"
-	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\nContent-Length: 108\r\nContent-Length: 0\r\n\r\n"
+	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\n\r\n"
 
 
-GET WITH PARAMS: 1ms
-	req: "GET /test/query_params HTTP/1.1\r\n\r\n"
-	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nContent-Length: 108\r\nContent-Length: 0\r\n\r\n"
+GET WITH PARAMS: 411μs
+	req: "GET /test/query_params?name=zeke&age=your_mom HTTP/1.1\r\n\r\n"
+	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\n\r\n"
 
 
-INVALID METHOD: 240μs
+INVALID METHOD: 292μs
 	req: "GE / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
-	res: "HTTP/1.1 400\r\nContent-Length: 33\r\nmalformed request: invalid method\r\nContent-Length: 0\r\n\r\n"
+	res: "HTTP/1.1 400\r\nContent-Length: 63\r\nmalformed request: method was extracted but found to be invalid\r\n\r\n"
 
 
-MISSING METHOD: 219μs
+MISSING METHOD: 315μs
 	req: "/ HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
-	res: "HTTP/1.1 400\r\nContent-Length: 33\r\nmalformed request: invalid method\r\nContent-Length: 0\r\n\r\n"
+	res: "HTTP/1.1 400\r\nContent-Length: 187\r\n\r\n"
 
 
-INVALID PROTOCOL: 289μs
+INVALID PROTOCOL: 282μs
 	req: "GET .1#####@@##@#\r\nHost: localhost\r\nConnection: close\r\n\r\n"
-	res: "HTTP/1.1 400\r\nContent-Length: 33\r\nmalformed request: invalid method\r\nContent-Length: 0\r\n\r\n"
+	res: "HTTP/1.1 400\r\nContent-Length: 187\r\n\r\n"
 
 
-MISSING PROTOCOL: 234μs
+MISSING PROTOCOL: 287μs
 	req: "GET / \r\nHost: localhost\r\nConnection: close\r\n\r\n"
-	res: "HTTP/1.1 400\r\nContent-Length: 35\r\nmalformed request: invalid protocol\r\nContent-Length: 0\r\n\r\n"
+	res: "HTTP/1.1 400\r\nContent-Length: 98\r\nmalformed request: protocol must be HTTP/1.1, server does not support other protocols at this time\r\n\r\n"
+
+
+POST WITH BODY: 417μs
+	req: "POST /test/post_with_body HTTP/1.1\r\n\r\nthis is a post request"
+	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\n\r\n"
 
 

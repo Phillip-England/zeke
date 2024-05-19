@@ -102,13 +102,14 @@ pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialR
                         None => {
                             let handler = handler.func.read().await; // TODO: need to handle this ok() better
                             let (request, handler_response) = handler(request);
+                            // TODO: clean all the white space up out of the handler_response?
                             let (_, potential_response) = handle_middleware(request, outerwares).await;
                             match potential_response {
                                 Some(response) => {
                                     return Some(response);
                                 },
                                 None => {
-                                    return Some(handler_response.clone());
+                                    return Some(handler_response);
                                 },
                             }
                         },
@@ -164,7 +165,7 @@ pub async fn read_socket(mut socket: TcpStream) -> (TcpStream, RequestBuffer, Po
             // No data read, potentially a graceful close
             return (socket, buffer, Some(Response::new()
                 .status(500)
-                .body("no data recieved from client connection")
+                .body("no data received from client connection")
             ));
         },
         Ok(Err(e)) => {

@@ -28,13 +28,11 @@ impl Response {
         for header in &self.headers {
             header_string.push_str(&format!("{}: {}\r\n", header.0, header.1));
         }
-        // Now create the full response with status line, headers, and body
         let full_response = format!(
-            "{} {}\r\n{}Content-Length: {}\r\n\r\n{}",
+            "{} {}\r\n{}\r\n{}",
             self.protocol, 
             self.status,
             header_string,
-            self.body.len(), // This assumes 'body' is a String or similar
             self.body
         );
         return full_response;
@@ -45,6 +43,10 @@ impl Response {
     }
     pub fn body(mut self, body: &str) -> Self {
         self.body = body.to_string();
+        return self;
+    }
+    pub fn content_length(mut self, length: usize) -> Self {
+        self.headers.push(("Content-Length".to_string(), length.to_string()));
         return self;
     }
     pub fn new_from_bytes(response_bytes: &Vec<u8>) -> Option<Response> {
@@ -99,10 +101,9 @@ impl Response {
         }
         // Now create the full response with status line, headers, and body
         let full_response = format!(
-            "HTTP/1.1 {}\r\n{}Content-Length: {}\r\n\r\n{}",
+            "HTTP/1.1 {}\r\n{}\r\n{}",
             self.status, 
             header_string,
-            self.body.len(), // This assumes 'body' is a String or similar
             self.body
         );
         full_response.into_bytes() // Convert the full response string to bytes

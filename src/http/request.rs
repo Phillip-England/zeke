@@ -27,6 +27,7 @@ impl HttpMethod {
 
 pub type Context = DashMap<String, String>;
 pub type Headers = DashMap<String, String>;
+pub type Params = DashMap<String, String>;
 
 pub trait Contextable: Send + Sync + 'static {
     fn key(&self) -> &'static str;
@@ -43,6 +44,7 @@ pub struct Request {
     pub protocol: String,
     pub body: String,
     pub headers: Headers,
+    pub params: Params,
     pub context: Context,
 }
 
@@ -56,6 +58,7 @@ impl Request {
             protocol: "HTTP/1.1".to_string(),
             body: "".to_string(),
             headers: DashMap::new(),
+            params: DashMap::new(),
             context: DashMap::new(),
         };
         return request;
@@ -66,6 +69,10 @@ impl Request {
     }
     pub fn path(mut self, path: &str) -> Self {
         self.path = path.to_string();
+        self
+    }
+    pub fn body(mut self, body: &str) -> Self {
+        self.body = body.to_string();
         self
     }
     pub fn get_header(&self, key: &str) -> String {
@@ -178,11 +185,8 @@ impl Request {
         }
     }
     pub fn new_from_bytes(request_bytes: RequestBuffer) -> (Request, PotentialResponse) {
-        match Request::parse_request_bytes(request_bytes) {
-            (request, potential_response) => {
-                return (request, potential_response);
-            }
-        }
+        let (request, potential_response) = Request::parse_request_bytes(request_bytes);
+        return (request, potential_response);
     }
     pub fn parse_request_bytes(request_bytes: RequestBuffer) -> (Request, PotentialResponse) {
         let mut request = Request{
@@ -194,31 +198,40 @@ impl Request {
             host: "".to_string(),
             headers: DashMap::new(),
             context: DashMap::new(),
+            params: DashMap::new(),
         };
         let end = request_bytes.iter().position(|&x| x == 0).unwrap_or(request_bytes.len());
         let request_string = String::from_utf8(request_bytes[..end].to_vec());
         match request_string {
             Err(_) => {
+                let err = "failed to parse request";
                 return (request, Some(Response::new()
                     .status(400)
-                    .body("failed to parse request")
+                    .body(err)
+                    .content_length(err.len())
                 ));
             }
             Ok(request_string) => {
                 let lines: Vec<&str> = request_string.lines().collect();
                 for i in 0..lines.len() {
                     let line = lines[i];
+                    // FIRST LINE
                     // method, path, protocol
                     if i == 0 {
+                        // COLLECTING PARTS OF FIRST LINE
                         let parts = line.split(" ").collect::<Vec<&str>>();
+
                         if parts.len() != 3 {
-                            return (request, Some(Response::new()
+                            let err = "malformed request protocol, method, or path is missing or malformed ensure request string follows the following convention 'GET /path/to/resource HTTP/1.1' or '{method} {path} {protocol}'";
+                            let res = Response::new()
                                 .status(400)
-                                .body("malformed request: invalid method")
-                            ));
+                                .body(err)
+                                .content_length(err.len());
+                            return (request, Some(res));
                         }
                         let method = parts[0];
                         let path = parts[1];
+                        // EXTRACTING QUERY PARAMS FROM PATH
                         let mut param_string = String::new();
                         let params = path.split("?").collect::<Vec<&str>>();
                         if params.len() > 1 {
@@ -237,19 +250,23 @@ impl Request {
                             }
                             let key = parts[0];
                             let value = parts[1];
-                            request.headers.insert(key.to_string(), value.to_string());
+                            request.params.insert(key.to_string(), value.to_string());
                         }
-                        let protocol = parts[2];
+                        // EXTRACTING PROTOCOL
                         // TODO: figure out how to handle other protocols
+                        let protocol = parts[2];
                         match protocol {
                             "HTTP/1.1" => {},
                             _ => {
+                                let err = "malformed request: protocol must be HTTP/1.1, server does not support other protocols at this time";
                                 return (request, Some(Response::new()
                                     .status(400)
-                                    .body("malformed request: invalid protocol")
+                                    .body(err)
+                                    .content_length(err.len())
                                 ));
                             },
                         }
+                        // ENSURING THE METHOD IS VALID
                         match method {
                             "GET" => {
                                 request.method = HttpMethod::GET;
@@ -267,24 +284,30 @@ impl Request {
                                 request.method = HttpMethod::PATCH;
                             },
                             _ => {
+                                let err = "malformed request: method was extracted but found to be invalid";
                                 return (request, Some(Response::new()
                                     .status(400)
-                                    .body("malformed request: invalid method")
+                                    .body(err)
+                                    .content_length(err.len())
                                 ));
                             },
                         }
                         request.protocol = protocol.to_string();
                         continue
                     }
+                    // LAST LINE
                     // request body
                     if i == lines.len() - 1 {
                         request.body = line.to_string();
                         continue
                     }
+                    // EMPTY LINES
                     // headers
                     if line.len() == 0 { // empty line
                         continue
                     }
+                    // HEADERS
+                    // ANY LINE THAT IS NOT THE FIRST OR LAST
                     let trimmed_line = line.replace(" ", "");
                     let parts = trimmed_line.split(":").collect::<Vec<&str>>();
                     if parts.len() != 2 {
