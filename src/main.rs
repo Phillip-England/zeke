@@ -5,7 +5,7 @@
 use zeke::http::router::{Route, Router};
 
 use zeke::examples::{
-    handlers::{handle_home, handle_about, handle_query_params, handle_post_with_body},
+    handlers::{handle_home, handle_about, handle_query_params, handle_post_with_body, handle_put, handle_delete},
     middleware::mw_group_trace,
 };
 
@@ -35,6 +35,14 @@ async fn main() {
     r.add(Route::new("GET /about", handle_about())
         .group(mw_group_trace())
     );
+
+    r.add(Route::new("PUT /test/put", handle_put())
+        .group(mw_group_trace())
+    );
+
+    r.add(Route::new("DELETE /test/delete", handle_delete())
+    .group(mw_group_trace())
+);
 
     let test_task = tokio::spawn(async {
         test(host.to_string()).await;

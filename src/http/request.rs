@@ -148,39 +148,57 @@ impl Request {
 
 
 
-    pub fn send(&self) -> Option<Response> {
+    pub fn send(&self) -> Response {
         let stream = TcpStream::connect(&self.get_host());
         match stream {
             Ok(mut stream) => {
                 let request = self.get_request_string();
                 match stream.write_all(request.as_bytes()) {
-                    Ok(_) => {
+                    Ok(_bytes_wrote) => {
                         let mut response_bytes = Vec::new();
                         match stream.read_to_end(&mut response_bytes) {
-                            Ok(_) => {
+                            Ok(_unknown) => {
                                 let response = Response::new_from_bytes(&response_bytes);
                                 match response {
                                     Some(response) => {
-                                        return Some(response);
+                                        return response
                                     },
                                     None => {
-                                        return None;
+                                        let response = Response::new()
+                                        .status(500)
+                                        .body("failed to parse response")
+                                        .content_length("failed to parse response".len());
+                                        return response
                                     },
                                 }
                             },
-                            Err(_) => {
-                                return None;
+                            // TODO: figure out what triggers this error
+                            Err(err) => {
+                                let response = Response::new()
+                                    .status(500)
+                                    .body(&err.to_string())
+                                    .content_length(err.to_string().len());
+                                return response
                             },
                         }
-
                     },
-                    Err(_) => {
-                        return None;
+                    // this error occurs if the request payload is too large
+                    Err(err) => {
+                        let response = Response::new()
+                        .status(500)
+                        .body(&err.to_string())
+                        .content_length(err.to_string().len());
+                        return response
                     },
                 }
             },
-            Err(_) => {
-                return None;
+            // TODO: figure out what triggers this error
+            Err(err) => {
+                let response = Response::new()
+                .status(500)
+                .body(&err.to_string())
+                .content_length(err.to_string().len());
+                return response
             },
         }
     }

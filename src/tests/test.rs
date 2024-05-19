@@ -59,6 +59,9 @@ pub async fn test(host: String) {
     invalid_protocol(host.clone()).await;
     missing_protocol(host.clone()).await;
     post_with_body(host.clone()).await;
+    put_request(host.clone()).await;
+    delete_request(host.clone()).await;
+    large_payload(host.clone()).await;
 
 }
 
@@ -69,23 +72,16 @@ pub async fn startup(host: String) {
         .path("/");
     loop {
         let res = req.send();
-        match res {
-            Some(res) => {
-                let result = TestResult::new(
-                    TestLogs::HttpTest, 
-                    "STARTUP".to_string(), 
-                    t.elapsed(), 
-                    req.get_request_string(), 
-                    res.raw()
-                );
-                result.log();
-                assert!(res.status == 200);
-                break;
-            },
-            None => {
-
-            }
-        }
+        let result = TestResult::new(
+            TestLogs::HttpTest, 
+            "STARTUP".to_string(), 
+            t.elapsed(), 
+            req.get_request_string(), 
+            res.raw()
+        );
+        result.log();
+        assert!(res.status == 200);
+        break;
     }
 }
 
@@ -96,22 +92,15 @@ pub async fn ping(host: String, attempts: i32) {
             .method(HttpMethod::GET)
             .path("/");
         let res = req.send();
-        match res {
-            Some(res) => {
-                let result = TestResult::new(
-                    TestLogs::HttpTest, 
-                    format!("PING {}", i), 
-                    t.elapsed(), 
-                    req.get_request_string(), 
-                    res.raw()
-                );
-                result.log();
-                assert!(res.status == 200);
-            },
-            None => {
-                assert!(false, "ping: test failed, no response")
-            }
-        }
+        let result = TestResult::new(
+            TestLogs::HttpTest, 
+            format!("PING {}", i), 
+            t.elapsed(), 
+            req.get_request_string(), 
+            res.raw()
+        );
+        result.log();
+        assert!(res.status == 200);
     }
 }
 
@@ -121,22 +110,15 @@ pub async fn get_with_params(host: String) {
         .method(HttpMethod::GET)
         .path("/test/query_params?name=zeke&age=your_mom");
     let res = req.send();
-    match res {
-        Some(res) => {
-            let result = TestResult::new(
-                TestLogs::HttpTest, 
-                "GET WITH PARAMS".to_string(), 
-                t.elapsed(), 
-                req.get_request_string(), 
-                res.raw()
-            );
-            result.log();
-            assert!(res.status == 200, "get_with_params: test failed");
-        },
-        None => {
-            assert!(false, "get_with_params: test failed");
-        }
-    }
+    let result = TestResult::new(
+        TestLogs::HttpTest, 
+        "GET WITH PARAMS".to_string(), 
+        t.elapsed(), 
+        req.get_request_string(), 
+        res.raw()
+    );
+    result.log();
+    assert!(res.status == 200, "get_with_params: test failed");
 }
 
 pub async fn get_with_headers(host: String) {
@@ -147,26 +129,19 @@ pub async fn get_with_headers(host: String) {
         .header("Zeke", "zeke rules")
         .header("Zekes-Mom", "so does zeke's mom");
     let res = req.send();
-    match res {
-        Some(res) => {
-            let zeke = res.get_header("Zeke");
-            let zekes_mom = res.get_header("Zekes-Mom");
-            assert!(zeke == Some("zeke and his mom rule!"));
-            assert!(zekes_mom == Some("so does zeke's mom"));
-            let result = TestResult::new(
-                TestLogs::HttpTest, 
-                "GET WITH HEADERS".to_string(), 
-                t.elapsed(), 
-                req.get_request_string(), 
-                res.raw()
-            );
-            result.log();
-            assert!(res.status == 200);
-        },
-        None => {
-            assert!(false, "get_with_headers: test failed");
-        }
-    }
+    let zeke = res.get_header("Zeke");
+    let zekes_mom = res.get_header("Zekes-Mom");
+    assert!(zeke == Some("zeke and his mom rule!"));
+    assert!(zekes_mom == Some("so does zeke's mom"));
+    let result = TestResult::new(
+        TestLogs::HttpTest, 
+        "GET WITH HEADERS".to_string(), 
+        t.elapsed(), 
+        req.get_request_string(), 
+        res.raw()
+    );
+    result.log();
+    assert!(res.status == 200);
 }
 
 pub async fn invalid_method(host: String)  {
@@ -270,22 +245,68 @@ pub async fn post_with_body(host: String) {
         .path("/test/post_with_body")
         .body("this is a post request");
     let res = req.send();
-    match res {
-        Some(res) => {
-            let result = TestResult::new(
-                TestLogs::HttpTest, 
-                "POST WITH BODY".to_string(), 
-                t.elapsed(), 
-                req.get_request_string(), 
-                res.raw()
-            );
-            result.log();
-            assert!(res.status == 200);
-        },
-        None => {
-            assert!(false, "post_with_body: test failed");
-        }
-    }
+    let result = TestResult::new(
+        TestLogs::HttpTest, 
+        "POST WITH BODY".to_string(), 
+        t.elapsed(), 
+        req.get_request_string(), 
+        res.raw()
+    );
+    result.log();
+    assert!(res.status == 200);
 }
 
+pub async fn put_request(host: String) {
+    let t = Timer::new();
+    let body = r#"{"name": "Zeke Updated", "age": 26}"#;
+    let req = Request::new(&host)
+        .method(HttpMethod::PUT)
+        .path("/test/put")
+        .body(body);
+    let res = req.send();
+    let result = TestResult::new(
+        TestLogs::HttpTest,
+        "PUT REQUEST".to_string(),
+        t.elapsed(),
+        req.get_request_string(),
+        res.raw()
+    );
+    result.log();
+    assert!(res.status == 200, "put_request: test failed");
+}
 
+pub async fn delete_request(host: String) {
+    let t = Timer::new();
+    let req = Request::new(&host)
+        .method(HttpMethod::DELETE)
+        .path("/test/delete");
+    let res = req.send();
+    let result = TestResult::new(
+        TestLogs::HttpTest,
+        "DELETE REQUEST".to_string(),
+        t.elapsed(),
+        req.get_request_string(),
+        res.raw()
+    );
+    result.log();
+    assert!(res.status == 200, "delete_request: test failed");
+}
+
+pub async fn large_payload(host: String) {
+    let t = Timer::new();
+    let large_body = "a".repeat(10 * 1024 * 1024); // 10 MB payload
+    let req = Request::new(&host)
+        .method(HttpMethod::GET)
+        .path("/")
+        .body(&large_body);
+    let res = req.send();
+    let result = TestResult::new(
+        TestLogs::HttpTest,
+        "LARGE PAYLOAD".to_string(),
+        t.elapsed(),
+        "REQUEST STRING TOO LARGE".to_string(),
+        res.raw()
+    );
+    result.log();
+    assert!(res.status == 500, "large_payload: test failed");
+}

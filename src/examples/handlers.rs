@@ -59,3 +59,23 @@ pub fn handle_post_with_body() -> Handler {
         return (request, response);
     });
 }
+
+pub fn handle_put() -> Handler {
+    return Handler::new(|request| {
+        let response = Response::new()
+            .status(200)
+            .body(&base_template("Basic Put"))
+            .set_header("Content-Type", "text/html");
+        return (request, response);
+    });
+}
+
+pub fn handle_delete() -> Handler {
+    return Handler::new(|request| {
+        let response = Response::new()
+            .status(200)
+            .body(&base_template("Basic Delete"))
+            .set_header("Content-Type", "text/html");
+        return (request, response);
+    });
+}
