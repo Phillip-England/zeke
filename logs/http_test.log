@@ -1,10 +1,70 @@
-STARTUP: 589μs
+STARTUP: 280μs
 	req: "GET / HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\n\r\n"
 
 
-LARGE PAYLOAD: 17ms
+PING 0: 196μs
+	req: "GET / HTTP/1.1\r\n\r\n"
+	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\n\r\n"
+
+
+PING 1: 176μs
+	req: "GET / HTTP/1.1\r\n\r\n"
+	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\n\r\n"
+
+
+PING 2: 183μs
+	req: "GET / HTTP/1.1\r\n\r\n"
+	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\n\r\n"
+
+
+GET WITH HEADERS: 144μs
+	req: "GET / HTTP/1.1\r\nZeke: zeke rules\r\nZekes-Mom: so does zeke's mom\r\n\r\n"
+	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\n\r\n"
+
+
+GET WITH PARAMS: 116μs
+	req: "GET /test/query_params?name=zeke&age=your_mom HTTP/1.1\r\n\r\n"
+	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\n\r\n"
+
+
+INVALID METHOD: 83μs
+	req: "GE / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
+	res: "HTTP/1.1 400\r\nContent-Length: 63\r\nmalformed request: method was extracted but found to be invalid\r\n\r\n"
+
+
+MISSING METHOD: 87μs
+	req: "/ HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
+	res: "HTTP/1.1 400\r\nContent-Length: 187\r\n\r\n"
+
+
+INVALID PROTOCOL: 110μs
+	req: "GET .1#####@@##@#\r\nHost: localhost\r\nConnection: close\r\n\r\n"
+	res: "HTTP/1.1 400\r\nContent-Length: 187\r\n\r\n"
+
+
+MISSING PROTOCOL: 131μs
+	req: "GET / \r\nHost: localhost\r\nConnection: close\r\n\r\n"
+	res: "HTTP/1.1 400\r\nContent-Length: 98\r\nmalformed request: protocol must be HTTP/1.1, server does not support other protocols at this time\r\n\r\n"
+
+
+POST WITH BODY: 171μs
+	req: "POST /test/post_with_body HTTP/1.1\r\n\r\nthis is a post request"
+	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\n\r\n"
+
+
+PUT REQUEST: 119μs
+	req: "PUT /test/put HTTP/1.1\r\n\r\n{\"name\": \"Zeke Updated\", \"age\": 26}"
+	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\n\r\n"
+
+
+DELETE REQUEST: 106μs
+	req: "DELETE /test/delete HTTP/1.1\r\n\r\n"
+	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\n\r\n"
+
+
+LARGE PAYLOAD: 3ms
 	req: "REQUEST STRING TOO LARGE"
-	res: "HTTP/1.1 500\r\nContent-Length: 25\r\n\r\nBroken pipe (os error 32)"
+	res: "HTTP/1.1 500\r\nContent-Length: 38\r\n\r\nConnection reset by peer (os error 54)"
 
 

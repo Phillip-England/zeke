@@ -1,7 +1,7 @@
 
 
 
-use crate::tests::timer::{Time, Timer};
+use crate::http::timer::{Time, Timer};
 use crate::http::request::{Request, HttpMethod};
 
 #[derive(Debug, Clone)]
