@@ -23,6 +23,7 @@ async fn main() {
 	log.reset_log(Logs::ServerError);
 	log.reset_log(Logs::HttpTest);
 	log.reset_log(Logs::Debug);
+	log.reset_log(Logs::FuzzFail);
 
     let host = "127.0.0.1:8080";
 	let mut r = Router::new();

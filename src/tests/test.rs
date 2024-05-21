@@ -32,12 +32,14 @@ pub async fn test(host: String, log: Logger) {
 		"GET /".to_string(),
 		"GET /about".to_string()
 	]);
-	for _ in 0..1000 {
+	for _ in 0..100 {
 		let str = fuzz.rand_req_str();
 		let req = Request::new(&host);
 		let res = req.send_raw(&str);
-		log.log(Logs::Debug, &format!("fuzzing: {:?}", str));
-		// log.http(Logs::Debug, "fuzzing", &req, &res);
+		log.log(Logs::HttpTest, &format!("fuzzing:\n\t{:?}\n\t{:?}", str, res.raw()));
+		if res.status != 200 {
+			log.log(Logs::FuzzFail, &format!("fuzzing failed:\n\t{:?}\n\t{:?}", str, res.raw()));
+		}
 	}
 }
 

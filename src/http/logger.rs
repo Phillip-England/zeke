@@ -13,6 +13,7 @@ pub enum Logs {
 	ServerError,
     HttpTest,
 	Debug,
+	FuzzFail,
 }
 
 impl Logs {
@@ -22,6 +23,7 @@ impl Logs {
 			Logs::ServerError => "error.log",
             Logs::HttpTest => "test.log",
 			Logs::Debug => "debug.log",
+			Logs::FuzzFail => "fuzz_fail.log",
         }
     }
 }
@@ -88,8 +90,8 @@ impl Logger {
             .append(true)
             .open(&file_path)
             .expect("Unable to open file");
-    
         writeln!(file, "{:?}: {}", self.elapsed(), message).expect("Unable to write to file");
+		writeln!(file, "\n").expect("Unable to write to file");
     }
     pub fn http(&self, file_name: Logs, label: &str, req: &String, res: &String) {
         let file_path = format!("{}/{}", self.log_root_dir, file_name.as_str());
