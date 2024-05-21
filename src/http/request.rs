@@ -304,6 +304,7 @@ impl Request {
                     // LAST LINE
                     // request body
                     if i == lines.len() - 1 {
+						println!("line: {:?}", line);
                         request.body = line.to_string();
                         continue
                     }

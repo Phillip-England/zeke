@@ -19,7 +19,7 @@
 	res: "HTTP/1.1 400\r\nContent-Length: 63\r\n\r\nmalformed request: method was extracted but found to be invalid"
 
 
-"3ms": missing method
+"4ms": missing method
 	req: "GET  HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 400\r\nContent-Length: 63\r\n\r\nmalformed request: status line did not have exactly three parts"
 
@@ -34,7 +34,7 @@
 	res: "HTTP/1.1 400\r\nContent-Length: 58\r\n\r\nprotocol is missing or invalid: only HTTP/1.1 is supported"
 
 
-"4ms": post_with_body
+"5ms": post_with_body
 	req: "POST /test/post_with_body HTTP/1.1\r\n\r\nthis is a post request"
 	res: "HTTP/1.1 200\r\nContent-Length: 308\r\nContent-Type: text/html\r\n\r\n"
 
@@ -49,12 +49,12 @@
 	res: "HTTP/1.1 200\r\nContent-Length: 306\r\nContent-Type: text/html\r\n\r\n"
 
 
-"10ms": status_line_no_spaces
+"11ms": status_line_no_spaces
 	req: "GET  HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 400\r\nContent-Length: 63\r\n\r\nmalformed request: status line did not have exactly three parts"
 
 
-"10ms": malformed_header
+"11ms": malformed_header
 	req: "GET  HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 400\r\nContent-Length: 54\r\n\r\nmalformed request: header line did not contain a colon"
 
@@ -62,5 +62,20 @@
 "11ms": invalid_path
 	req: "GET  HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 404\r\nContent-Length: 15\r\n\r\nroute not found"
+
+
+"12ms": missing_carriages
+	req: "GET  HTTP/1.1\r\n\r\n"
+	res: "HTTP/1.1 200\r\nContent-Length: 298\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\n\r\n"
+
+
+"12ms": missing_carriages
+	req: "GET  HTTP/1.1\r\n\r\n"
+	res: "HTTP/1.1 400\r\nContent-Length: 63\r\n\r\nmalformed request: status line did not have exactly three parts"
+
+
+"12ms": missing_carriages
+	req: "GET  HTTP/1.1\r\n\r\n"
+	res: "HTTP/1.1 200\r\nContent-Length: 298\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\n\r\n"
 
 

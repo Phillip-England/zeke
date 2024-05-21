@@ -28,7 +28,6 @@ impl Response {
         for header in &self.headers {
             header_string.push_str(&format!("{}: {}\r\n", header.0, header.1));
         }
-		println!("header_string: {:?}", self.headers);
         let full_response = format!(
             "{} {}\r\n{}\r\n{}",
             self.protocol, 

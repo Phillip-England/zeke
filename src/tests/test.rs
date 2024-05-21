@@ -28,6 +28,7 @@ pub async fn test(host: String, log: Logger) {
 	status_line_no_spaces(host.clone(), &log).await;
 	malformed_header(host.clone(), &log).await;
 	invalid_path(host.clone(), &log).await;
+	missing_carriages(host.clone(), &log).await;
 	
 	// fuzzing randomly generated requests
 	let mut fuzz = Fuzzer::new(host.clone());
@@ -59,7 +60,6 @@ pub async fn startup(host: String, log: &Logger) {
     loop {
         let res = req.send();
 		log.http(Logs::HttpTest, "startup", &req.raw(), &res.raw());
-		println!("{:?}", res.raw());
         assert!(res.status == 200);
         break;
     }
@@ -194,4 +194,18 @@ pub async fn invalid_path(host: String, log: &Logger) {
 	let res = req.send_raw(&req_invalid_path);
 	log.http(Logs::HttpTest, "invalid_path", &req.raw(), &res.raw());
 	assert!(res.status == 404);
+}
+
+pub async fn missing_carriages(host: String, log: &Logger) {
+	let req = Request::new(&host);
+	// no carriages at all 200
+	let raw = "GET / HTTP/1.1".to_string();
+	let res = req.send_raw(&raw);
+	log.http(Logs::HttpTest, "missing_carriages", &req.raw(), &res.raw());
+	assert!(res.status == 200);
+	// headers with no carriages 400
+	let raw = "GET / HTTP/1.1 Host: localhost\r\n\r\n".to_string();
+	let res = req.send_raw(&raw);
+	log.http(Logs::HttpTest, "missing_carriages", &req.raw(), &res.raw());
+	assert!(res.status == 400);
 }

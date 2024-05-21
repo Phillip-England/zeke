@@ -29,10 +29,6 @@ impl Fuzzer {
 	pub fn get_rand_path(&mut self) -> String {
 		let mut rng = rand::thread_rng();
 		let random_index = rng.gen_range(0..self.paths.len()); 
-		let deviate_chance = rng.gen_range(0..100);
-		if deviate_chance == 0 {
-			return "TODO: how to make this string useful?".to_string();
-		}
 		return self.paths[random_index].clone();
 	}
 	pub fn get_rand_headers(&mut self) -> String {
@@ -48,10 +44,6 @@ impl Fuzzer {
 	pub fn get_rand_header(&mut self) -> String {
 		let mut rng = rand::thread_rng();
 		let random_index = rng.gen_range(0..5);
-		let deviate_chance = rng.gen_range(0..100);
-		if deviate_chance == 0 {
-			return "TODO: how to make this string useful?".to_string();
-		}
 		let header = match random_index {
 			0 => "Host: localhost\r\n",
 			1 => "Connection: close\r\n",
