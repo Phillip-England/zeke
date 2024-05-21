@@ -79,3 +79,15 @@ pub fn handle_delete() -> Handler {
         return (request, response);
     });
 }
+
+pub fn handle_set_cookie() -> Handler {
+	return Handler::new(|request| {
+		let mut response = Response::new()
+			.status(200)
+			.body(&base_template("Set Cookie"))
+			.set_header("Content-Type", "text/html");
+		response.set_cookie("zeke", "likes cookies");
+		response.set_cookie("zekes-mom", "lies cookies too");
+		return (request, response);
+	});
+}

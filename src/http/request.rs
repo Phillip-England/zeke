@@ -113,7 +113,7 @@ impl Request {
         );
         return request;
     }
-	
+
     pub fn send_raw(&self, raw_request: &String) -> Response {
         let stream = TcpStream::connect(&self.get_host());
         match stream {
@@ -304,7 +304,6 @@ impl Request {
                     // LAST LINE
                     // request body
                     if i == lines.len() - 1 {
-						println!("line: {:?}", line);
                         request.body = line.to_string();
                         continue
                     }

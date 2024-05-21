@@ -29,6 +29,7 @@ pub async fn test(host: String, log: Logger) {
 	malformed_header(host.clone(), &log).await;
 	invalid_path(host.clone(), &log).await;
 	missing_carriages(host.clone(), &log).await;
+	setting_cookies(host.clone(), &log).await;
 	
 	// fuzzing randomly generated requests
 	let mut fuzz = Fuzzer::new(host.clone());
@@ -94,8 +95,8 @@ pub async fn get_with_headers(host: String, log: &Logger) {
     let zeke = res.get_header("Zeke");
     let zekes_mom = res.get_header("Zekes-Mom");
 	log.http(Logs::HttpTest, "get_with_headers", &req.raw(), &res.raw());
-    assert!(zeke == Some("zeke and his mom rule!"));
-    assert!(zekes_mom == Some("so does zeke's mom"));
+    assert!(zeke == "zeke and his mom rule!");
+    assert!(zekes_mom == "so does zeke's mom");
     assert!(res.status == 200);
 }
 
@@ -208,4 +209,12 @@ pub async fn missing_carriages(host: String, log: &Logger) {
 	let res = req.send_raw(&raw);
 	log.http(Logs::HttpTest, "missing_carriages", &req.raw(), &res.raw());
 	assert!(res.status == 400);
+}
+
+pub async fn setting_cookies(host: String, log: &Logger) {
+	let req = Request::new(&host);
+	let req_set_cookies = "GET /test/set_cookies HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n".to_string();
+	let res = req.send_raw(&req_set_cookies);
+	log.http(Logs::HttpTest, "setting_cookies", &req.raw(), &res.raw());
+	assert!(res.status == 200);
 }

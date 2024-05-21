@@ -2,6 +2,7 @@
 
 
 
+use zeke::examples::handlers::handle_set_cookie;
 use zeke::http::logger::{Logger, Logs};
 use zeke::http::router::{Route, Router};
 
@@ -49,6 +50,10 @@ async fn main() {
     );
 
     r.add(Route::new("DELETE /test/delete", handle_delete())
+    	.group(mw_group_trace())
+	);
+
+    r.add(Route::new("GET /test/set_cookies", handle_set_cookie())
     	.group(mw_group_trace())
 	);
 
