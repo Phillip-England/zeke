@@ -21,6 +21,7 @@ async fn main() {
 	let log = Logger::new();
 	log.reset_log(Logs::Trace);
 	log.reset_log(Logs::ServerError);
+	log.reset_log(Logs::HttpTest);
 
     let host = "127.0.0.1:8080";
 	let mut r = Router::new();
@@ -49,8 +50,10 @@ async fn main() {
     	.group(mw_group_trace())
 	);
 
+
+	let c_log = log.clone();
 	let test_task = tokio::spawn(async {
-        test(host.to_string()).await;
+        test(host.to_string(), c_log).await;
     });
 
 	let c_log = log.clone();
