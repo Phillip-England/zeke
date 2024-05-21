@@ -113,7 +113,8 @@ impl Request {
         );
         return request;
     }
-    pub fn send_raw(&self, raw_request: &String) -> Option<Response> {
+	
+    pub fn send_raw(&self, raw_request: &String) -> Response {
         let stream = TcpStream::connect(&self.get_host());
         match stream {
             Ok(mut stream) => {
@@ -123,33 +124,33 @@ impl Request {
                         match stream.read_to_end(&mut response_bytes) {
                             Ok(_) => {
                                 let response = Response::new_from_bytes(&response_bytes);
-                                match response {
-                                    Some(response) => {
-                                        return Some(response);
-                                    },
-                                    None => {
-                                        return None;
-                                    },
-                                }
+								return response;
                             },
-                            Err(_) => {
-                                return None;
+							// TODO: what would cause this error to occur?
+                            Err(e) => {
+                                return Response::new()
+									.status(500)
+									.body(&format!("failed to read response: {:?}", e));
                             },
                         }
 
                     },
-                    Err(_) => {
-                        return None;
+					// TODO: what would cause this error to occur?
+                    Err(e) => {
+						return Response::new()
+							.status(500)
+							.body(&format!("failed to read response: {:?}", e));
                     },
                 }
             },
-            Err(_) => {
-                return None;
+			// TODO: what would cause this error to occur?
+            Err(e) => {
+				return Response::new()
+					.status(500)
+					.body(&format!("failed to read response: {:?}", e));
             },
         }
     }
-
-
 
     pub fn send(&self) -> Response {
         let stream = TcpStream::connect(&self.get_host());
@@ -162,17 +163,7 @@ impl Request {
                         match stream.read_to_end(&mut response_bytes) {
                             Ok(_unknown) => {
                                 let response = Response::new_from_bytes(&response_bytes);
-                                match response {
-                                    Some(response) => {
-                                        return response
-                                    },
-                                    None => {
-                                        let response = Response::new()
-                                        .status(500)
-                                        .body("failed to parse response");
-                                        return response
-                                    },
-                                }
+                                return response;
                             },
                             // TODO: figure out what triggers this error
                             Err(err) => {

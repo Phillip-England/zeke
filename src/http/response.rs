@@ -46,13 +46,17 @@ impl Response {
 		self.headers.push(("Content-Length".to_string(), body.len().to_string()));
         return self;
     }
-    pub fn new_from_bytes(response_bytes: &Vec<u8>) -> Option<Response> {
+    pub fn new_from_bytes(response_bytes: &Vec<u8>) -> Response {
         let mut response = Response::new();
         let end = response_bytes.iter().position(|&x| x == 0).unwrap_or(response_bytes.len());
         let request_string = String::from_utf8(response_bytes[..end].to_vec());
         match request_string {
-            Err(_) => {
-                return None
+            Err(e) => {
+				// TODO: set up logging
+				// TODO: why would this error occur?
+                return Response::new()
+					.status(500)
+					.body(&format!("internal server error: {:?}", e));
             }
             Ok(request_string) => {
                 let lines: Vec<&str> = request_string.lines().collect();
@@ -62,7 +66,9 @@ impl Response {
                     if i == 0 {
                         let parts: Vec<&str> = line.split(" ").collect();
                         if parts.len() < 2 {
-                            return None;
+                            return Response::new()
+								.status(400)
+								.body("malformed response, more than 2 parts in status line");
                         }
                         let protocol = parts[0];
                         let status = parts[1];
@@ -71,7 +77,9 @@ impl Response {
                                 response.status = status;
                             }
                             Err(_) => {
-                                return None;
+                                return Response::new()
+									.status(400)
+									.body("malformed response, status is not a number");
                             }
                         }
                         response.protocol = protocol.to_string();
@@ -80,14 +88,16 @@ impl Response {
                     else if line.contains(":") {
                         let parts: Vec<&str> = line.split(":").collect();
                         if parts.len() < 2 {
-                            return None;
+                            return Response::new()
+								.status(400)
+								.body("malformed response, more than 2 parts in header line");
                         }
                         let key = parts[0].trim();
                         let value = parts[1].trim();
                         response.headers.push((key.to_string(), value.to_string()));
                     }
                 }
-                return Some(response);
+                return response;
             }
         }
     }
