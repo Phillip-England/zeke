@@ -169,8 +169,7 @@ impl Request {
                                     None => {
                                         let response = Response::new()
                                         .status(500)
-                                        .body("failed to parse response")
-                                        .content_length("failed to parse response".len());
+                                        .body("failed to parse response");
                                         return response
                                     },
                                 }
@@ -179,8 +178,7 @@ impl Request {
                             Err(err) => {
                                 let response = Response::new()
                                     .status(500)
-                                    .body(&err.to_string())
-                                    .content_length(err.to_string().len());
+                                    .body(&err.to_string());
                                 return response
                             },
                         }
@@ -189,8 +187,7 @@ impl Request {
                     Err(err) => {
                         let response = Response::new()
                         .status(500)
-                        .body(&err.to_string())
-                        .content_length(err.to_string().len());
+                        .body(&err.to_string());
                         return response
                     },
                 }
@@ -199,8 +196,7 @@ impl Request {
             Err(err) => {
                 let response = Response::new()
                 .status(500)
-                .body(&err.to_string())
-                .content_length(err.to_string().len());
+                .body(&err.to_string());
                 return response
             },
         }
@@ -230,7 +226,6 @@ impl Request {
                 return (request, Some(Response::new()
                     .status(400)
                     .body(err)
-                    .content_length(err.len())
                 ));
             }
             Ok(request_string) => {
@@ -248,8 +243,7 @@ impl Request {
                             let err = "malformed request protocol, method, or path is missing or malformed ensure request string follows the following convention 'GET /path/to/resource HTTP/1.1' or '{method} {path} {protocol}'";
                             let res = Response::new()
                                 .status(400)
-                                .body(err)
-                                .content_length(err.len());
+                                .body(err);
                             return (request, Some(res));
                         }
                         let method = parts[0];
@@ -286,7 +280,6 @@ impl Request {
                                 return (request, Some(Response::new()
                                     .status(400)
                                     .body(err)
-                                    .content_length(err.len())
                                 ));
                             },
                         }
@@ -313,7 +306,6 @@ impl Request {
                                 return (request, Some(Response::new()
                                     .status(400)
                                     .body(err)
-                                    .content_length(err.len())
                                 ));
                             },
                         }

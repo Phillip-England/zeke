@@ -43,10 +43,7 @@ impl Response {
     }
     pub fn body(mut self, body: &str) -> Self {
         self.body = body.to_string();
-        return self;
-    }
-    pub fn content_length(mut self, length: usize) -> Self {
-        self.headers.push(("Content-Length".to_string(), length.to_string()));
+		self.headers.push(("Content-Length".to_string(), body.len().to_string()));
         return self;
     }
     pub fn new_from_bytes(response_bytes: &Vec<u8>) -> Option<Response> {
