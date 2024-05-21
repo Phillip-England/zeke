@@ -1,27 +1,16 @@
 
 
 
+use crate::http::logger::Logs;
 use crate::http::timer::{Time, Timer};
 use crate::http::request::{Request, HttpMethod};
 
-#[derive(Debug, Clone)]
-pub enum TestLogs {
-    HttpTest,
-}
 
-impl TestLogs {
-    pub fn as_str(&self) -> &'static str {
-        match *self {
-            TestLogs::HttpTest => "http_test.log",
-        }
-    }
-}
 
-impl Copy for TestLogs {}
 
 #[derive(Debug, Clone)]
 pub struct TestResult {
-    pub log_path: TestLogs,
+    pub log_path: Logs,
     pub test_name: String,
     pub time: Time,
     pub request_raw: String,
@@ -29,7 +18,7 @@ pub struct TestResult {
 }
 
 impl TestResult {
-    pub fn new(log_path: TestLogs, test_name: String, time: Time, request_raw: String, response_raw: String) -> Self {
+    pub fn new(log_path: Logs, test_name: String, time: Time, request_raw: String, response_raw: String) -> Self {
         Self {
             log_path,
             test_name,
@@ -49,7 +38,7 @@ impl TestResult {
 
 pub async fn test(host: String) {
     let timer = Timer::new();
-    timer.clean_log(TestLogs::HttpTest);
+    timer.clean_log(Logs::HttpTest);
     startup(host.clone()).await;  
     ping(host.clone(), 3).await; 
     get_with_headers(host.clone()).await;
@@ -73,7 +62,7 @@ pub async fn startup(host: String) {
     loop {
         let res = req.send();
         let result = TestResult::new(
-            TestLogs::HttpTest, 
+            Logs::HttpTest, 
             "STARTUP".to_string(), 
             t.elapsed(), 
             req.get_request_string(), 
@@ -93,7 +82,7 @@ pub async fn ping(host: String, attempts: i32) {
             .path("/");
         let res = req.send();
         let result = TestResult::new(
-            TestLogs::HttpTest, 
+            Logs::HttpTest, 
             format!("PING {}", i), 
             t.elapsed(), 
             req.get_request_string(), 
@@ -111,7 +100,7 @@ pub async fn get_with_params(host: String) {
         .path("/test/query_params?name=zeke&age=your_mom");
     let res = req.send();
     let result = TestResult::new(
-        TestLogs::HttpTest, 
+        Logs::HttpTest, 
         "GET WITH PARAMS".to_string(), 
         t.elapsed(), 
         req.get_request_string(), 
@@ -134,7 +123,7 @@ pub async fn get_with_headers(host: String) {
     assert!(zeke == Some("zeke and his mom rule!"));
     assert!(zekes_mom == Some("so does zeke's mom"));
     let result = TestResult::new(
-        TestLogs::HttpTest, 
+        Logs::HttpTest, 
         "GET WITH HEADERS".to_string(), 
         t.elapsed(), 
         req.get_request_string(), 
@@ -152,7 +141,7 @@ pub async fn invalid_method(host: String)  {
     match res {
         Some(res) => {
             let result = TestResult::new(
-                TestLogs::HttpTest, 
+                Logs::HttpTest, 
                 "INVALID METHOD".to_string(), 
                 t.elapsed(), 
                 req_malformed_method, 
@@ -175,7 +164,7 @@ pub async fn missing_method(host: String) {
     match res {
         Some(res) => {
             let result = TestResult::new(
-                TestLogs::HttpTest, 
+                Logs::HttpTest, 
                 "MISSING METHOD".to_string(), 
                 t.elapsed(), 
                 req_missing_method, 
@@ -198,7 +187,7 @@ pub async fn invalid_protocol(host: String) {
     match res {
         Some(res) => {
             let test_result = TestResult::new(
-                TestLogs::HttpTest, 
+                Logs::HttpTest, 
                 "INVALID PROTOCOL".to_string(), 
                 t.elapsed(), 
                 req_invalid_protocol, 
@@ -223,7 +212,7 @@ pub async fn missing_protocol(host: String) {
     match res {
         Some(res) => {
             let result = TestResult::new(
-                TestLogs::HttpTest, 
+                Logs::HttpTest, 
                 "MISSING PROTOCOL".to_string(), 
                 t.elapsed(), 
                 req_missing_protocol, 
@@ -246,7 +235,7 @@ pub async fn post_with_body(host: String) {
         .body("this is a post request");
     let res = req.send();
     let result = TestResult::new(
-        TestLogs::HttpTest, 
+        Logs::HttpTest, 
         "POST WITH BODY".to_string(), 
         t.elapsed(), 
         req.get_request_string(), 
@@ -265,7 +254,7 @@ pub async fn put_request(host: String) {
         .body(body);
     let res = req.send();
     let result = TestResult::new(
-        TestLogs::HttpTest,
+        Logs::HttpTest,
         "PUT REQUEST".to_string(),
         t.elapsed(),
         req.get_request_string(),
@@ -282,7 +271,7 @@ pub async fn delete_request(host: String) {
         .path("/test/delete");
     let res = req.send();
     let result = TestResult::new(
-        TestLogs::HttpTest,
+        Logs::HttpTest,
         "DELETE REQUEST".to_string(),
         t.elapsed(),
         req.get_request_string(),
@@ -301,7 +290,7 @@ pub async fn large_payload(host: String) {
         .body(&large_body);
     let res = req.send();
     let result = TestResult::new(
-        TestLogs::HttpTest,
+        Logs::HttpTest,
         "LARGE PAYLOAD".to_string(),
         t.elapsed(),
         "REQUEST STRING TOO LARGE".to_string(),

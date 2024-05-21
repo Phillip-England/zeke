@@ -3,7 +3,8 @@ use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::Path;
 
-use crate::tests::test::TestLogs;
+use super::logger::Logs;
+
 
 pub type Times = Vec<Time>;
 
@@ -13,7 +14,7 @@ pub fn print_times(times: &Times) {
     }
 }
 
-pub fn log_times(times: &Times, file_name: TestLogs) {
+pub fn log_times(times: &Times, file_name: Logs) {
     let timer = Timer::new();
     for index in 0..times.len() {
         let time = &times[index];
@@ -59,7 +60,7 @@ impl Time {
             TimerUnit::Millis => self.time * 1000,
         }
     }
-    pub fn log(&self, file_name: TestLogs, message: &str) {
+    pub fn log(&self, file_name: Logs, message: &str) {
         let timer = Timer::new();
         timer.log(file_name, &format!("{}: {}{}", message, self.time, self.unit.as_str()));
     }
@@ -122,7 +123,7 @@ impl Timer {
     pub fn reset(&mut self) {
         self.start_time = std::time::Instant::now();
     }
-    pub fn clean_log(&self, file_name: TestLogs) {
+    pub fn clean_log(&self, file_name: Logs) {
         let file_path = format!("{}/{}", self.log_root_dir, file_name.as_str());
         let directory = Path::new(&self.log_root_dir);
     
@@ -137,7 +138,7 @@ impl Timer {
             .open(&file_path)
             .expect("Unable to open file");
     }
-    pub fn log(&self, file_name: TestLogs, message: &str) {
+    pub fn log(&self, file_name: Logs, message: &str) {
         let file_path = format!("{}/{}", self.log_root_dir, file_name.as_str());
         let directory = Path::new(&self.log_root_dir);
     

@@ -1,7 +1,6 @@
 use std::time::Duration;
 use std::sync::{Arc, PoisonError};
 
-use tokio::time::sleep;
 use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::{TcpListener, TcpStream}, time::timeout, sync::MutexGuard};
 
 use crate::http::router::Router;
@@ -10,14 +9,18 @@ use crate::http::response::{Response, ResponseBytes, PotentialResponse};
 use crate::http::request::{Request, RequestBuffer};
 use crate::http::handler::Handler;
 
+use super::logger::{Logger, Logs};
 
-pub async fn connect_socket(listener: &TcpListener, router: Arc<Router>) {
+
+pub async fn connect_socket(listener: &TcpListener, router: Arc<Router>, log: Arc<Logger>) {
+	log.log(Logs::Trace, "in connect_socket() at socket.rs");
 	let socket_result = listener.accept().await;
     match socket_result {
         Ok(socket_result) => {
             let (socket, _addr) = socket_result;
             tokio::spawn(async move {
-                let (socket, response) = handle_connection(socket, router).await;
+				log.log(Logs::Trace, "new tokio thread spawned for connection");
+                let (socket, response) = handle_connection(socket, router, &log).await;
                 let response_bytes: ResponseBytes = response.to_bytes();
                 let (mut socket, write_result) = write_socket(socket, &response_bytes).await;
                 match write_result {
@@ -49,7 +52,7 @@ pub async fn connect_socket(listener: &TcpListener, router: Arc<Router>) {
 
 }
 
-pub async fn handle_connection(socket: TcpStream, router: Arc<Router>) -> (TcpStream, Response) {
+pub async fn handle_connection(socket: TcpStream, router: Arc<Router>, logger: &Arc<Logger>) -> (TcpStream, Response) {
     let (socket, request_bytes, potetial_response) = read_socket(socket).await;
     match potetial_response {
         Some(response) => {
@@ -69,7 +72,7 @@ pub async fn handle_connection(socket: TcpStream, router: Arc<Router>) -> (TcpSt
                     return (socket, response);
                 },
                 None => {
-                    let potential_response: PotentialResponse = handle_request(router, request).await;
+                    let potential_response: PotentialResponse = handle_request(router, request, logger).await;
                     match potential_response {
                         Some(response) => {
                             return (socket, response);
@@ -87,7 +90,7 @@ pub async fn handle_connection(socket: TcpStream, router: Arc<Router>) -> (TcpSt
     }
 }
 
-pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialResponse {
+pub async fn handle_request(router: Arc<Router>, request: Request, logger: &Arc<Logger>) -> PotentialResponse {
     let route_handler = router.routes.get(request.method_and_path.as_str());
     match route_handler {
         Some(route_handler) => {
@@ -95,7 +98,7 @@ pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialR
             match potential_route {
                 Ok(route_handler) => {
                     let (handler, middlewares, outerwares) = &*route_handler;
-                    let (request, potential_response) = handle_middleware(request, middlewares).await;
+                    let (request, potential_response) = handle_middleware(request, middlewares, logger).await;
                     match potential_response {
                         Some(response) => {
                             return Some(response);
@@ -104,7 +107,7 @@ pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialR
                             let handler = handler.func.read().await; // TODO: need to handle this ok() better
                             let (request, handler_response) = handler(request);
                             // TODO: clean all the white space up out of the handler_response?
-                            let (_, potential_response) = handle_middleware(request, outerwares).await;
+                            let (_, potential_response) = handle_middleware(request, outerwares, logger).await;
                             match potential_response {
                                 Some(response) => {
                                     return Some(response);
@@ -136,7 +139,7 @@ pub async fn handle_request(router: Arc<Router>, request: Request) -> PotentialR
 
 }
 
-pub async fn handle_middleware(mut request: Request, middlewares: &Middlewares) -> (Request, PotentialResponse) {
+pub async fn handle_middleware(mut request: Request, middlewares: &Middlewares, logger: &Arc<Logger>) -> (Request, PotentialResponse) {
     if middlewares.len() == 0 {
         return (request, None);
     };
