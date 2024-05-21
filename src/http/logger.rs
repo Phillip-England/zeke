@@ -1,12 +1,6 @@
 use std::{fs::{self, OpenOptions}, path::Path};
 use std::io::Write;
 
-use crate::Response;
-
-use super::request::Request;
-
-
-
 #[derive(Debug, Clone,)]
 pub enum Logs {
 	Trace,
@@ -110,5 +104,20 @@ impl Logger {
 		writeln!(file, "\treq: {:?}", req).expect("Unable to write to file");
 		writeln!(file, "\tres: {:?}", res).expect("Unable to write to file");
         writeln!(file, "\n").expect("Unable to write to file");
+    }
+    pub fn dbg(&self, message: &str) {
+        let file_path = format!("{}/{}", self.log_root_dir, Logs::Debug.as_str());
+        let directory = Path::new(&self.log_root_dir);
+        if !directory.exists() {
+            fs::create_dir_all(directory).expect("Unable to create directory");
+        }
+        let mut file = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .append(true)
+            .open(&file_path)
+            .expect("Unable to open file");
+        writeln!(file, "{:?}: {}", self.elapsed(), message).expect("Unable to write to file");
+		writeln!(file, "\n").expect("Unable to write to file");
     }
 }

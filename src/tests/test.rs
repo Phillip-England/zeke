@@ -25,6 +25,9 @@ pub async fn test(host: String, log: Logger) {
     put_request(host.clone(), &log).await;
     delete_request(host.clone(), &log).await;
     large_payload(host.clone(), &log).await;
+	status_line_no_spaces(host.clone(), &log).await;
+	malformed_header(host.clone(), &log).await;
+	invalid_path(host.clone(), &log).await;
 	
 	// fuzzing randomly generated requests
 	let mut fuzz = Fuzzer::new(host.clone());
@@ -36,11 +39,17 @@ pub async fn test(host: String, log: Logger) {
 		let str = fuzz.rand_req_str();
 		let req = Request::new(&host);
 		let res = req.send_raw(&str);
-		log.log(Logs::HttpTest, &format!("fuzzing:\n\t{:?}\n\t{:?}", str, res.raw()));
 		if res.status != 200 {
+			fuzz.failed = true;
 			log.log(Logs::FuzzFail, &format!("fuzzing failed:\n\t{:?}\n\t{:?}", str, res.raw()));
 		}
 	}
+	if fuzz.failed {
+		println!("fuzzing test failed, check logs")
+	}
+	
+
+
 }
 
 pub async fn startup(host: String, log: &Logger) {
@@ -50,6 +59,7 @@ pub async fn startup(host: String, log: &Logger) {
     loop {
         let res = req.send();
 		log.http(Logs::HttpTest, "startup", &req.raw(), &res.raw());
+		println!("{:?}", res.raw());
         assert!(res.status == 200);
         break;
     }
@@ -160,4 +170,28 @@ pub async fn large_payload(host: String, log: &Logger) {
     let res = req.send();
 	// log.http(Logs::HttpTest, "large_payload", &req, &res); // too big
     assert!(res.status == 500, "large_payload: test failed");
+}
+
+pub async fn status_line_no_spaces(host: String, log: &Logger) {
+	let req = Request::new(&host);
+	let req_status_line_no_spaces = "GET/HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n".to_string();
+	let res = req.send_raw(&req_status_line_no_spaces);
+	log.http(Logs::HttpTest, "status_line_no_spaces", &req.raw(), &res.raw());
+	assert!(res.status == 400);
+}
+
+pub async fn malformed_header(host: String, log: &Logger) {
+	let req = Request::new(&host);
+	let req_malformed_header = "GET / HTTP/1.1\r\nHost: localhost\r\nxxxxxxxxxxxxx\r\n\r\n".to_string();
+	let res = req.send_raw(&req_malformed_header);
+	log.http(Logs::HttpTest, "malformed_header", &req.raw(), &res.raw());
+	assert!(res.status == 400);
+}
+
+pub async fn invalid_path(host: String, log: &Logger) {
+	let req = Request::new(&host);
+	let req_invalid_path = "GET /test/invalid_path HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n".to_string();
+	let res = req.send_raw(&req_invalid_path);
+	log.http(Logs::HttpTest, "invalid_path", &req.raw(), &res.raw());
+	assert!(res.status == 404);
 }

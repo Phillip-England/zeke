@@ -1,6 +1,1 @@
 
-"12ms": fuzzing failed:
-	"TODO: how to make this string useful? HTTP/1.1\r\nHost: localhost\r\nAccept-Language: en-US\r\nUser-Agent: Mozilla/5.0\r\nAccept: text/html\r\n\r\n"
-	"HTTP/1.1 400\r\nContent-Length: 63\r\nmalformed request: status line did not have exactly three parts\r\n\r\n"
-
-

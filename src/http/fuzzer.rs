@@ -2,6 +2,7 @@ use rand::Rng;
 
 pub struct Fuzzer {
 	pub host: String,
+	pub failed: bool,
 	pub paths: Vec<String>,
 }
 
@@ -9,6 +10,7 @@ impl Fuzzer {
 	pub fn new(host: String) -> Fuzzer {
 		Fuzzer {
 			host: host,
+			failed: false,
 			paths: vec![],
 		}
 	}

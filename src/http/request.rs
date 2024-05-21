@@ -315,6 +315,12 @@ impl Request {
                     // HEADERS
                     // ANY LINE THAT IS NOT THE FIRST OR LAST
                     let trimmed_line = line.replace(" ", "");
+					if trimmed_line.contains(":") == false {
+						return (request, Some(Response::new()
+							.status(400)
+							.body("malformed request: header line did not contain a colon")
+						));
+					}
                     let parts = trimmed_line.split(":").collect::<Vec<&str>>();
                     if parts.len() != 2 {
                         continue

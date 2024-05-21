@@ -5,12 +5,12 @@
 "3ms": "src/http/request.rs" 233 malformed request status line did not have exactly three parts - request status line -> "/ HTTP/1.1"
 
 
-"3ms": "src/http/request.rs" 233 malformed request status line did not have exactly three parts - request status line -> "GET .1#####@@##@#"
+"4ms": "src/http/request.rs" 233 malformed request status line did not have exactly three parts - request status line -> "GET .1#####@@##@#"
 
 
 "4ms": "src/http/request.rs" 269 protocol is missing or invalid - request status line -> "GET / "
 
 
-"12ms": "src/http/request.rs" 233 malformed request status line did not have exactly three parts - request status line -> "TODO: how to make this string useful? HTTP/1.1"
+"10ms": "src/http/request.rs" 233 malformed request status line did not have exactly three parts - request status line -> "GET/HTTP/1.1"
 
 

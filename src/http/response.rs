@@ -28,6 +28,7 @@ impl Response {
         for header in &self.headers {
             header_string.push_str(&format!("{}: {}\r\n", header.0, header.1));
         }
+		println!("header_string: {:?}", self.headers);
         let full_response = format!(
             "{} {}\r\n{}\r\n{}",
             self.protocol, 
@@ -62,6 +63,12 @@ impl Response {
                 let lines: Vec<&str> = request_string.lines().collect();
                 for i in 0..lines.len() {
                     let line = lines[i];
+
+					// skipping empty lines
+					if line.len() == 0 {
+						continue;
+					}
+
                     // protocol / status
                     if i == 0 {
                         let parts: Vec<&str> = line.split(" ").collect();
@@ -83,20 +90,39 @@ impl Response {
                             }
                         }
                         response.protocol = protocol.to_string();
+						continue;
                     }
+
+					// body
+					// TODO: why are all requests ending with "     "
+					if i == lines.len() - 1 {
+						let line = line.trim();
+						if line.len() == 0 {
+							continue;
+						}
+						response.body = line.to_string();
+						continue;
+					}
+
+
                     // headers
-                    else if line.contains(":") {
-                        let parts: Vec<&str> = line.split(":").collect();
-                        if parts.len() < 2 {
-                            return Response::new()
-								.status(400)
-								.body("malformed response, more than 2 parts in header line");
-                        }
-                        let key = parts[0].trim();
-                        let value = parts[1].trim();
-                        response.headers.push((key.to_string(), value.to_string()));
-                    }
-                }
+					// if a header doesnt contain a colon, skip it
+					// TODO: is this the best way to handle this?
+					// TODO: should we return an error response instead?
+					if !line.contains(":") {
+						continue;
+					}
+					let parts: Vec<&str> = line.split(":").collect();
+					if parts.len() < 2 {
+						return Response::new()
+							.status(400)
+							.body("malformed response, more than 2 parts in header line");
+					}
+					let key = parts[0].trim();
+					let value = parts[1].trim();
+					response.headers.push((key.to_string(), value.to_string()));
+                
+				}
                 return response;
             }
         }
