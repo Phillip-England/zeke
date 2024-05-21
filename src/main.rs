@@ -20,6 +20,7 @@ async fn main() {
 
 	let log = Logger::new();
 	log.reset_log(Logs::Trace);
+	log.reset_log(Logs::ServerError);
 	log.log(Logs::Trace, "spawned in main.rs");
 	
 

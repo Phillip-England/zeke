@@ -1,49 +1,63 @@
 
-"301µs": spawned in main.rs
-"428µs": creating thread for test functions
-"494µs": creating thread for server
-"560µs": in Router::serve
-"664µs": new log cloned awaiting connection
-"693µs": in connect_socket() at socket.rs
-"863µs": new log cloned awaiting connection
-"895µs": in connect_socket() at socket.rs
-"946µs": new tokio thread spawned for connection
+"483µs": spawned in main.rs
+"591µs": creating thread for test functions
+"661µs": creating thread for server
+"705µs": in Router::serve
+"802µs": new log cloned awaiting connection
+"833µs": in connect_socket() at socket.rs
+"991µs": new log cloned awaiting connection
+"1ms": in connect_socket() at socket.rs
+"1ms": new tokio thread spawned for connection
+"1ms": handle_connection() in socket.rs
 "1ms": new log cloned awaiting connection
 "1ms": in connect_socket() at socket.rs
 "1ms": new tokio thread spawned for connection
+"1ms": handle_connection() in socket.rs
 "2ms": new log cloned awaiting connection
 "2ms": in connect_socket() at socket.rs
 "2ms": new tokio thread spawned for connection
+"2ms": handle_connection() in socket.rs
 "2ms": new log cloned awaiting connection
 "2ms": in connect_socket() at socket.rs
 "2ms": new tokio thread spawned for connection
+"2ms": handle_connection() in socket.rs
 "3ms": new log cloned awaiting connection
 "3ms": in connect_socket() at socket.rs
 "3ms": new tokio thread spawned for connection
+"3ms": handle_connection() in socket.rs
 "3ms": new log cloned awaiting connection
 "3ms": in connect_socket() at socket.rs
 "3ms": new tokio thread spawned for connection
-"3ms": new log cloned awaiting connection
-"3ms": in connect_socket() at socket.rs
-"3ms": new tokio thread spawned for connection
+"3ms": handle_connection() in socket.rs
 "4ms": new log cloned awaiting connection
 "4ms": in connect_socket() at socket.rs
 "4ms": new tokio thread spawned for connection
+"4ms": handle_connection() in socket.rs
 "4ms": new log cloned awaiting connection
 "4ms": in connect_socket() at socket.rs
 "4ms": new tokio thread spawned for connection
+"4ms": handle_connection() in socket.rs
 "5ms": new log cloned awaiting connection
 "5ms": in connect_socket() at socket.rs
 "5ms": new tokio thread spawned for connection
+"5ms": handle_connection() in socket.rs
 "5ms": new log cloned awaiting connection
 "5ms": in connect_socket() at socket.rs
 "5ms": new tokio thread spawned for connection
+"5ms": handle_connection() in socket.rs
 "6ms": new log cloned awaiting connection
 "6ms": in connect_socket() at socket.rs
 "6ms": new tokio thread spawned for connection
+"6ms": handle_connection() in socket.rs
 "6ms": new log cloned awaiting connection
 "6ms": in connect_socket() at socket.rs
 "6ms": new tokio thread spawned for connection
-"9ms": new log cloned awaiting connection
-"9ms": in connect_socket() at socket.rs
-"9ms": new tokio thread spawned for connection
+"6ms": handle_connection() in socket.rs
+"6ms": new log cloned awaiting connection
+"6ms": in connect_socket() at socket.rs
+"7ms": new tokio thread spawned for connection
+"7ms": handle_connection() in socket.rs
+"10ms": new log cloned awaiting connection
+"10ms": in connect_socket() at socket.rs
+"10ms": new tokio thread spawned for connection
+"10ms": handle_connection() in socket.rs

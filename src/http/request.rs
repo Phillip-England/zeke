@@ -1,8 +1,11 @@
 use std::str;
+use std::sync::Arc;
 use std::{fmt::Debug, io::{Read, Write}, net::TcpStream};
 use dashmap::DashMap;
 
 use crate::http::response::{PotentialResponse, Response};
+
+use super::logger::{Logger, Logs};
 
 #[derive(Debug, Clone)]
 pub enum HttpMethod {
@@ -202,11 +205,11 @@ impl Request {
             },
         }
     }
-    pub fn new_from_bytes(request_bytes: RequestBuffer) -> (Request, PotentialResponse) {
-        let (request, potential_response) = Request::parse_request_bytes(request_bytes);
+    pub fn new_from_bytes(request_bytes: RequestBuffer, log: &Arc<Logger>) -> (Request, PotentialResponse) {
+        let (request, potential_response) = Request::parse_request_bytes(request_bytes, log);
         return (request, potential_response);
     }
-    pub fn parse_request_bytes(request_bytes: RequestBuffer) -> (Request, PotentialResponse) {
+    pub fn parse_request_bytes(request_bytes: RequestBuffer, log: &Arc<Logger>) -> (Request, PotentialResponse) {
         let mut request = Request{
             method_and_path: "".to_string(),
             method: HttpMethod::GET,
@@ -221,7 +224,8 @@ impl Request {
         let end = request_bytes.iter().position(|&x| x == 0).unwrap_or(request_bytes.len());
         let request_string = String::from_utf8(request_bytes[..end].to_vec());
         match request_string {
-            Err(_) => {
+            Err(e) => {
+				log.log(Logs::ServerError, &format!("failed to parse request: {}", e));
                 let err = "failed to parse request";
                 return (request, Some(Response::new()
                     .status(400)
@@ -240,6 +244,7 @@ impl Request {
                         let parts = line.split(" ").collect::<Vec<&str>>();
 
                         if parts.len() != 3 {
+							log.log(Logs::ServerError, "incoming request was malformed and did not have 3 parts in the first line");
                             let err = "malformed request protocol, method, or path is missing or malformed ensure request string follows the following convention 'GET /path/to/resource HTTP/1.1' or '{method} {path} {protocol}'";
                             let res = Response::new()
                                 .status(400)
@@ -276,6 +281,7 @@ impl Request {
                         match protocol {
                             "HTTP/1.1" => {},
                             _ => {
+								log.log(Logs::ServerError, "invalid protocol used");
                                 let err = "malformed request: protocol must be HTTP/1.1, server does not support other protocols at this time";
                                 return (request, Some(Response::new()
                                     .status(400)
@@ -302,6 +308,7 @@ impl Request {
                                 request.method = HttpMethod::PATCH;
                             },
                             _ => {
+								log.log(Logs::ServerError, "invalid method used");
                                 let err = "malformed request: method was extracted but found to be invalid";
                                 return (request, Some(Response::new()
                                     .status(400)

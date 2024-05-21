@@ -24,9 +24,10 @@ pub async fn connect_socket(listener: &TcpListener, router: Arc<Router>, log: Ar
                 let response_bytes: ResponseBytes = response.to_bytes();
                 let (mut socket, write_result) = write_socket(socket, &response_bytes).await;
                 match write_result {
+					// TODO: what would cause this to fail?
+					// TODO: learn more about this and how to handle it
                     Some(response) => {
-                        // TODO: set up logging when writes fail
-                        println!("failed to write to socket: {:?}", response);
+						log.log(Logs::ServerError, &format!("failed to write to socket: {:?}", response));
                     },
                     None => {
                         // proceed to shutdown
@@ -37,22 +38,26 @@ pub async fn connect_socket(listener: &TcpListener, router: Arc<Router>, log: Ar
                     Ok(_) => {
                         return;
                     },
-                    Err(_e) => {
-                        // TODO: set up logging when shutdown fails
-                        // TODO: search up the implications of shutdown failure
+					// TODO: what would even cause this to fail?
+					// TODO: search up the implications of shutdown failure
+                    Err(e) => {
+						log.log(Logs::ServerError, &format!("failed to shutdown socket: {}", e));
                     }
                 };
             });
         },
-        Err(_) => {
-            // TODO: Set up logging for when connecting to socket fails
+		// TODO: what would even cause this to fail?
+		// TODO: search up the implications of socket connection failures
+        Err(e) => {
+			log.log(Logs::ServerError, &format!("failed to connect to socket: {}", e));
             return;
         },
     }
 
 }
 
-pub async fn handle_connection(socket: TcpStream, router: Arc<Router>, logger: &Arc<Logger>) -> (TcpStream, Response) {
+pub async fn handle_connection(socket: TcpStream, router: Arc<Router>, log: &Arc<Logger>) -> (TcpStream, Response) {
+	log.log(Logs::Trace, "handle_connection() in socket.rs");
     let (socket, request_bytes, potetial_response) = read_socket(socket).await;
     match potetial_response {
         Some(response) => {
@@ -60,37 +65,25 @@ pub async fn handle_connection(socket: TcpStream, router: Arc<Router>, logger: &
         },
         None => {
             if request_bytes.len() == 0 {
-                // TODO: should this be a 500?
-                return (socket, Response::new()
-                    .status(500)
-                    .body("read 0 bytes from client connection")
-                );
+				log.log(Logs::Trace, "no data received from client connection");
+                // TODO: does it matter if we get any bytes?
+                return (socket, Response::new().status(200));
             }
-            let (request, potential_response) = Request::new_from_bytes(request_bytes);
+            let (request, potential_response) = Request::new_from_bytes(request_bytes, log);
             match potential_response {
                 Some(response) => {
                     return (socket, response);
                 },
                 None => {
-                    let potential_response: PotentialResponse = handle_request(router, request, logger).await;
-                    match potential_response {
-                        Some(response) => {
-                            return (socket, response);
-                        },
-                        None => {
-                            return (socket, Response::new()
-                                .status(500)
-                                .body("failed to handle request")
-                            );
-                        },
-                    }
+                    let response: Response = handle_request(router, request, log).await;
+					return (socket, response);
                 },
             }
         },
     }
 }
 
-pub async fn handle_request(router: Arc<Router>, request: Request, logger: &Arc<Logger>) -> PotentialResponse {
+pub async fn handle_request(router: Arc<Router>, request: Request, log: &Arc<Logger>) -> Response {
     let route_handler = router.routes.get(request.method_and_path.as_str());
     match route_handler {
         Some(route_handler) => {
@@ -98,22 +91,22 @@ pub async fn handle_request(router: Arc<Router>, request: Request, logger: &Arc<
             match potential_route {
                 Ok(route_handler) => {
                     let (handler, middlewares, outerwares) = &*route_handler;
-                    let (request, potential_response) = handle_middleware(request, middlewares, logger).await;
+                    let (request, potential_response) = handle_middleware(request, middlewares, log).await;
                     match potential_response {
                         Some(response) => {
-                            return Some(response);
+                            return response;
                         },
                         None => {
                             let handler = handler.func.read().await; // TODO: need to handle this ok() better
                             let (request, handler_response) = handler(request);
                             // TODO: clean all the white space up out of the handler_response?
-                            let (_, potential_response) = handle_middleware(request, outerwares, logger).await;
+                            let (_, potential_response) = handle_middleware(request, outerwares, log).await;
                             match potential_response {
                                 Some(response) => {
-                                    return Some(response);
+                                    return response;
                                 },
                                 None => {
-                                    return Some(handler_response);
+                                    return handler_response;
                                 },
                             }
                         },
@@ -122,18 +115,16 @@ pub async fn handle_request(router: Arc<Router>, request: Request, logger: &Arc<
                 // PoisonError is a type of error that occurs when a Mutex is poisoned
                 // TODO: set up logging for when a Mutex is poisoned
                 Err(_poision_error) => {
-                    return Some(Response::new()
+                    return Response::new()
                         .status(500)
                         .body("failed to lock route handler")
-                    );
                 },
             }
         },
         None => {
-            return Some(Response::new()
+            return Response::new()
                 .status(404)
                 .body("route not found")
-            );
         },
     }
 

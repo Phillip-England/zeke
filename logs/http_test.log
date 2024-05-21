@@ -1,64 +1,64 @@
-STARTUP: 577μs
+STARTUP: 573μs
 	req: "GET / HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\n\r\n"
 
 
-PING 0: 418μs
+PING 0: 382μs
 	req: "GET / HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\n\r\n"
 
 
-PING 1: 367μs
+PING 1: 374μs
 	req: "GET / HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\n\r\n"
 
 
-PING 2: 365μs
+PING 2: 405μs
 	req: "GET / HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\n\r\n"
 
 
-GET WITH HEADERS: 365μs
-	req: "GET / HTTP/1.1\r\nZeke: zeke rules\r\nZekes-Mom: so does zeke's mom\r\n\r\n"
+GET WITH HEADERS: 390μs
+	req: "GET / HTTP/1.1\r\nZekes-Mom: so does zeke's mom\r\nZeke: zeke rules\r\n\r\n"
 	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZeke: zeke and his mom rule!\r\nZekes-Mom: so does zeke's mom\r\n\r\n"
 
 
-GET WITH PARAMS: 315μs
+GET WITH PARAMS: 399μs
 	req: "GET /test/query_params?name=zeke&age=your_mom HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\n\r\n"
 
 
-INVALID METHOD: 285μs
+INVALID METHOD: 373μs
 	req: "GE / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
 	res: "HTTP/1.1 400\r\nContent-Length: 63\r\nmalformed request: method was extracted but found to be invalid\r\n\r\n"
 
 
-MISSING METHOD: 328μs
+MISSING METHOD: 348μs
 	req: "/ HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
 	res: "HTTP/1.1 400\r\nContent-Length: 187\r\n\r\n"
 
 
-INVALID PROTOCOL: 302μs
+INVALID PROTOCOL: 375μs
 	req: "GET .1#####@@##@#\r\nHost: localhost\r\nConnection: close\r\n\r\n"
 	res: "HTTP/1.1 400\r\nContent-Length: 187\r\n\r\n"
 
 
-MISSING PROTOCOL: 288μs
+MISSING PROTOCOL: 399μs
 	req: "GET / \r\nHost: localhost\r\nConnection: close\r\n\r\n"
 	res: "HTTP/1.1 400\r\nContent-Length: 98\r\nmalformed request: protocol must be HTTP/1.1, server does not support other protocols at this time\r\n\r\n"
 
 
-POST WITH BODY: 331μs
+POST WITH BODY: 350μs
 	req: "POST /test/post_with_body HTTP/1.1\r\n\r\nthis is a post request"
 	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\n\r\n"
 
 
-PUT REQUEST: 325μs
+PUT REQUEST: 336μs
 	req: "PUT /test/put HTTP/1.1\r\n\r\n{\"name\": \"Zeke Updated\", \"age\": 26}"
 	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\n\r\n"
 
 
-DELETE REQUEST: 351μs
+DELETE REQUEST: 320μs
 	req: "DELETE /test/delete HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\n\r\n"
 

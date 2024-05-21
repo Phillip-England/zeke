@@ -6,6 +6,7 @@ use std::io::Write;
 #[derive(Debug, Clone)]
 pub enum Logs {
 	Trace,
+	ServerError,
     HttpTest,
 }
 
@@ -13,6 +14,7 @@ impl Logs {
     pub fn as_str(&self) -> &'static str {
         match *self {
 			Logs::Trace => "trace.log",
+			Logs::ServerError => "server_error.log",
             Logs::HttpTest => "http_test.log",
         }
     }
