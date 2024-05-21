@@ -21,8 +21,6 @@ async fn main() {
 	let log = Logger::new();
 	log.reset_log(Logs::Trace);
 	log.reset_log(Logs::ServerError);
-	log.log(Logs::Trace, "spawned in main.rs");
-	
 
     let host = "127.0.0.1:8080";
 	let mut r = Router::new();
@@ -51,20 +49,22 @@ async fn main() {
     	.group(mw_group_trace())
 	);
 
-	log.log(Logs::Trace, "creating thread for test functions");
-    let test_task = tokio::spawn(async {
+	let test_task = tokio::spawn(async {
         test(host.to_string()).await;
     });
 
-	log.log(Logs::Trace, "creating thread for server");
-    let server_task = tokio::spawn(async move {
-        match r.serve(host, log).await {
-            Some(e) => println!("Error: {:?}", e),
-            None => println!("Server closed"),
-        }
-    });
+	let c_log = log.clone();
+	let server_task = tokio::spawn(async move {
+		match r.serve(host, c_log).await {
+			Some(e) => {
+				log.log(Logs::ServerError, &format!("error running Router.serve(): {:?}", e));
+				println!("Error: {:?}", e)
+			},
+			None => println!("Server closed"),
+		}
+	});
 
-    let _ = tokio::join!(test_task, server_task);
+	let _ = tokio::join!(test_task, server_task);
 
 }
 

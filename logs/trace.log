@@ -1,63 +1,104 @@
 
-"483µs": spawned in main.rs
-"591µs": creating thread for test functions
-"661µs": creating thread for server
-"705µs": in Router::serve
-"802µs": new log cloned awaiting connection
-"833µs": in connect_socket() at socket.rs
-"991µs": new log cloned awaiting connection
+"1ms": in connect_socket() at socket.rs
 "1ms": in connect_socket() at socket.rs
 "1ms": new tokio thread spawned for connection
 "1ms": handle_connection() in socket.rs
-"1ms": new log cloned awaiting connection
-"1ms": in connect_socket() at socket.rs
-"1ms": new tokio thread spawned for connection
-"1ms": handle_connection() in socket.rs
-"2ms": new log cloned awaiting connection
+"1ms": handle_request() in socket.rs
+"1ms": route found
+"1ms": route handler locked
+"1ms": no middleware response found, continuing to handler
+"1ms": handler response found, continuing to outerware
+"1ms": no outerware middleware responses found, returning handler response
 "2ms": in connect_socket() at socket.rs
 "2ms": new tokio thread spawned for connection
 "2ms": handle_connection() in socket.rs
-"2ms": new log cloned awaiting connection
+"2ms": handle_request() in socket.rs
+"2ms": route found
+"2ms": route handler locked
+"2ms": no middleware response found, continuing to handler
+"2ms": handler response found, continuing to outerware
+"2ms": no outerware middleware responses found, returning handler response
 "2ms": in connect_socket() at socket.rs
 "2ms": new tokio thread spawned for connection
 "2ms": handle_connection() in socket.rs
-"3ms": new log cloned awaiting connection
+"3ms": handle_request() in socket.rs
+"3ms": route found
+"3ms": route handler locked
+"3ms": no middleware response found, continuing to handler
+"3ms": handler response found, continuing to outerware
+"3ms": no outerware middleware responses found, returning handler response
 "3ms": in connect_socket() at socket.rs
 "3ms": new tokio thread spawned for connection
 "3ms": handle_connection() in socket.rs
-"3ms": new log cloned awaiting connection
-"3ms": in connect_socket() at socket.rs
-"3ms": new tokio thread spawned for connection
-"3ms": handle_connection() in socket.rs
-"4ms": new log cloned awaiting connection
+"3ms": handle_request() in socket.rs
+"3ms": route found
+"3ms": route handler locked
+"3ms": no middleware response found, continuing to handler
+"3ms": handler response found, continuing to outerware
+"3ms": no outerware middleware responses found, returning handler response
 "4ms": in connect_socket() at socket.rs
 "4ms": new tokio thread spawned for connection
 "4ms": handle_connection() in socket.rs
-"4ms": new log cloned awaiting connection
+"4ms": handle_request() in socket.rs
+"4ms": route found
+"4ms": route handler locked
+"4ms": no middleware response found, continuing to handler
+"4ms": handler response found, continuing to outerware
+"4ms": no outerware middleware responses found, returning handler response
 "4ms": in connect_socket() at socket.rs
 "4ms": new tokio thread spawned for connection
 "4ms": handle_connection() in socket.rs
-"5ms": new log cloned awaiting connection
+"5ms": handle_request() in socket.rs
+"5ms": route found
+"5ms": route handler locked
+"5ms": no middleware response found, continuing to handler
+"5ms": handler response found, continuing to outerware
+"5ms": no outerware middleware responses found, returning handler response
 "5ms": in connect_socket() at socket.rs
 "5ms": new tokio thread spawned for connection
 "5ms": handle_connection() in socket.rs
-"5ms": new log cloned awaiting connection
-"5ms": in connect_socket() at socket.rs
-"5ms": new tokio thread spawned for connection
-"5ms": handle_connection() in socket.rs
-"6ms": new log cloned awaiting connection
 "6ms": in connect_socket() at socket.rs
 "6ms": new tokio thread spawned for connection
 "6ms": handle_connection() in socket.rs
-"6ms": new log cloned awaiting connection
 "6ms": in connect_socket() at socket.rs
 "6ms": new tokio thread spawned for connection
 "6ms": handle_connection() in socket.rs
-"6ms": new log cloned awaiting connection
 "6ms": in connect_socket() at socket.rs
+"6ms": new tokio thread spawned for connection
+"7ms": handle_connection() in socket.rs
+"7ms": in connect_socket() at socket.rs
 "7ms": new tokio thread spawned for connection
 "7ms": handle_connection() in socket.rs
-"10ms": new log cloned awaiting connection
-"10ms": in connect_socket() at socket.rs
-"10ms": new tokio thread spawned for connection
-"10ms": handle_connection() in socket.rs
+"7ms": handle_request() in socket.rs
+"7ms": route found
+"7ms": route handler locked
+"7ms": no middleware response found, continuing to handler
+"7ms": handler response found, continuing to outerware
+"7ms": no outerware middleware responses found, returning handler response
+"8ms": in connect_socket() at socket.rs
+"8ms": new tokio thread spawned for connection
+"8ms": handle_connection() in socket.rs
+"8ms": handle_request() in socket.rs
+"8ms": route found
+"8ms": route handler locked
+"8ms": no middleware response found, continuing to handler
+"8ms": handler response found, continuing to outerware
+"8ms": no outerware middleware responses found, returning handler response
+"8ms": in connect_socket() at socket.rs
+"8ms": new tokio thread spawned for connection
+"8ms": handle_connection() in socket.rs
+"8ms": handle_request() in socket.rs
+"8ms": route found
+"9ms": route handler locked
+"9ms": no middleware response found, continuing to handler
+"9ms": handler response found, continuing to outerware
+"9ms": no outerware middleware responses found, returning handler response
+"12ms": in connect_socket() at socket.rs
+"12ms": new tokio thread spawned for connection
+"12ms": handle_connection() in socket.rs
+"13ms": handle_request() in socket.rs
+"13ms": route found
+"13ms": route handler locked
+"13ms": no middleware response found, continuing to handler
+"13ms": handler response found, continuing to outerware
+"13ms": no outerware middleware responses found, returning handler response

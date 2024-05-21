@@ -13,13 +13,11 @@ use super::logger::{Logger, Logs};
 
 
 pub async fn connect_socket(listener: &TcpListener, router: Arc<Router>, log: Arc<Logger>) {
-	log.log(Logs::Trace, "in connect_socket() at socket.rs");
 	let socket_result = listener.accept().await;
     match socket_result {
         Ok(socket_result) => {
             let (socket, _addr) = socket_result;
             tokio::spawn(async move {
-				log.log(Logs::Trace, "new tokio thread spawned for connection");
                 let (socket, response) = handle_connection(socket, router, &log).await;
                 let response_bytes: ResponseBytes = response.to_bytes();
                 let (mut socket, write_result) = write_socket(socket, &response_bytes).await;
@@ -57,7 +55,6 @@ pub async fn connect_socket(listener: &TcpListener, router: Arc<Router>, log: Ar
 }
 
 pub async fn handle_connection(socket: TcpStream, router: Arc<Router>, log: &Arc<Logger>) -> (TcpStream, Response) {
-	log.log(Logs::Trace, "handle_connection() in socket.rs");
     let (socket, request_bytes, potetial_response) = read_socket(socket).await;
     match potetial_response {
         Some(response) => {
@@ -65,7 +62,6 @@ pub async fn handle_connection(socket: TcpStream, router: Arc<Router>, log: &Arc
         },
         None => {
             if request_bytes.len() == 0 {
-				log.log(Logs::Trace, "no data received from client connection");
                 // TODO: does it matter if we get any bytes?
                 return (socket, Response::new().status(200));
             }
@@ -97,7 +93,7 @@ pub async fn handle_request(router: Arc<Router>, request: Request, log: &Arc<Log
                             return response;
                         },
                         None => {
-                            let handler = handler.func.read().await; // TODO: need to handle this ok() better
+                            let handler = handler.func.read().await;
                             let (request, handler_response) = handler(request);
                             // TODO: clean all the white space up out of the handler_response?
                             let (_, potential_response) = handle_middleware(request, outerwares, log).await;
@@ -112,9 +108,9 @@ pub async fn handle_request(router: Arc<Router>, request: Request, log: &Arc<Log
                         },
                     }
                 },  
-                // PoisonError is a type of error that occurs when a Mutex is poisoned
-                // TODO: set up logging for when a Mutex is poisoned
-                Err(_poision_error) => {
+                // TODO: figure out why this would happne?
+                Err(poision_error) => {
+					log.log(Logs::ServerError, &format!("failed to lock route handler: {:?}", poision_error));
                     return Response::new()
                         .status(500)
                         .body("failed to lock route handler")
@@ -130,7 +126,7 @@ pub async fn handle_request(router: Arc<Router>, request: Request, log: &Arc<Log
 
 }
 
-pub async fn handle_middleware(mut request: Request, middlewares: &Middlewares, logger: &Arc<Logger>) -> (Request, PotentialResponse) {
+pub async fn handle_middleware(mut request: Request, middlewares: &Middlewares, log: &Arc<Logger>) -> (Request, PotentialResponse) {
     if middlewares.len() == 0 {
         return (request, None);
     };

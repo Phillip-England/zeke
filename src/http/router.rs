@@ -34,7 +34,6 @@ impl Router {
         return self;
     }
     pub async fn serve(self: Router, addr: &str, log: Logger) -> Option<Error> {
-		log.log(Logs::Trace, "in Router::serve");
         let listener = tokio::net::TcpListener::bind(&addr).await;
         let router: Arc<Router> = Arc::new(self);
 		let log: Arc<Logger> = Arc::new(log);
@@ -43,7 +42,6 @@ impl Router {
                 loop {
                     let router: Arc<Router> = Arc::clone(&router); // TODO: is cloning the router bad?
 					let log: Arc<Logger> = Arc::clone(&log);
-					log.log(Logs::Trace, "new log cloned awaiting connection");
                     connect_socket(listener, router, log).await; 
                 }
             },

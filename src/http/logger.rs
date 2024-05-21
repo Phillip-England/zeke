@@ -3,7 +3,7 @@ use std::io::Write;
 
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone,)]
 pub enum Logs {
 	Trace,
 	ServerError,
@@ -21,12 +21,13 @@ impl Logs {
 }
 
 impl Copy for Logs {}
+
+#[derive(Debug, Clone)]
 pub struct Logger {
 	log_root_dir: String,
 	spawn_time: std::time::Instant,
 	last_logged: std::time::Instant,
 }
-
 impl Logger {
 	pub fn new() -> Self {
 		Self {
