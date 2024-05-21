@@ -1,5 +1,5 @@
 
-"3ms": invalid method used
-"3ms": incoming request was malformed and did not have 3 parts in the first line
-"4ms": incoming request was malformed and did not have 3 parts in the first line
-"4ms": invalid protocol used
+"5ms": invalid method used
+"6ms": incoming request was malformed and did not have 3 parts in the first line
+"6ms": incoming request was malformed and did not have 3 parts in the first line
+"7ms": invalid protocol used

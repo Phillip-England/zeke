@@ -26,15 +26,41 @@ impl Fuzzer {
 		return self;
 	}
     pub fn rand_req_str(&mut self) -> String {
-		let mut rng = rand::thread_rng();
-		let random_index = rng.gen_range(0..self.paths.len()); 
-		let path = self.paths[random_index].clone();
-		let headers = "";
+		let path = self.get_rand_path();
+		let headers = self.get_rand_headers();
 		let body = "";
 		let status_line = path + " HTTP/1.1";
-		let request_str = format!("{}\r\n{}\r\n\r\n{}", status_line, headers, body);
+		let request_str = format!("{}\r\n{}\r\n{}", status_line, headers, body);
 		return request_str;
     }
+	pub fn get_rand_path(&mut self) -> String {
+		let mut rng = rand::thread_rng();
+		let random_index = rng.gen_range(0..self.paths.len()); 
+		return self.paths[random_index].clone();
+	}
+	pub fn get_rand_headers(&mut self) -> String {
+		let mut headers = String::new();
+		let mut rng = rand::thread_rng();
+		let random_index = rng.gen_range(0..5);
+		for _ in 0..random_index {
+			let header = self.get_rand_header();
+			headers.push_str(&header);
+		}
+		return headers;
+	}
+	pub fn get_rand_header(&mut self) -> String {
+		let mut rng = rand::thread_rng();
+		let random_index = rng.gen_range(0..5);
+		let header = match random_index {
+			0 => "Host: localhost\r\n",
+			1 => "Connection: close\r\n",
+			2 => "User-Agent: Mozilla/5.0\r\n",
+			3 => "Accept: text/html\r\n",
+			4 => "Accept-Language: en-US\r\n",
+			_ => "Accept-Encoding: gzip, deflate\r\n",
+		};
+		return header.to_string();
+	}
 }
 
 pub async fn test(host: String, log: Logger) {
@@ -55,13 +81,16 @@ pub async fn test(host: String, log: Logger) {
 	
 	// fuzzing randomly generated requests
 	let mut fuzz = Fuzzer::new(host.clone());
-	fuzz.set_paths(vec!["GET /".to_string()]);
-
-	for _ in 0..10 {
+	fuzz.set_paths(vec![
+		"GET /".to_string(),
+		"GET /about".to_string()
+	]);
+	for _ in 0..1000 {
 		let str = fuzz.rand_req_str();
 		let req = Request::new(&host);
 		let res = req.send_raw(&str);
-		log.http(Logs::Debug, "fuzzing", &req, &res);
+		log.log(Logs::Debug, &format!("fuzzing: {:?}", str));
+		// log.http(Logs::Debug, "fuzzing", &req, &res);
 	}
 
 	
@@ -183,6 +212,6 @@ pub async fn large_payload(host: String, log: &Logger) {
         .path("/")
         .body(&large_body);
     let res = req.send();
-	log.http(Logs::HttpTest, "large_payload", &req, &res);
+	// log.http(Logs::HttpTest, "large_payload", &req, &res); // too big
     assert!(res.status == 500, "large_payload: test failed");
 }
