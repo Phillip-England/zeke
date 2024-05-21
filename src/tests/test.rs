@@ -1,11 +1,45 @@
 
 
 
+use std::path;
+
+use rand::Rng;
+
 use crate::http::logger::{Logger, Logs};
 use crate::http::timer::{Time, Timer};
 use crate::http::request::{Request, HttpMethod};
 
+pub struct Fuzzer {
+	pub host: String,
+	pub paths: Vec<String>,
+}
+
+impl Fuzzer {
+	pub fn new(host: String) -> Fuzzer {
+		Fuzzer {
+			host: host,
+			paths: vec![],
+		}
+	}
+	pub fn set_paths(&mut self, paths: Vec<String>) -> &mut Fuzzer{
+		self.paths = paths;
+		return self;
+	}
+    pub fn rand_req_str(&mut self) -> String {
+		let mut rng = rand::thread_rng();
+		let random_index = rng.gen_range(0..self.paths.len()); 
+		let path = self.paths[random_index].clone();
+		let headers = "";
+		let body = "";
+		let status_line = path + " HTTP/1.1";
+		let request_str = format!("{}\r\n{}\r\n\r\n{}", status_line, headers, body);
+		return request_str;
+    }
+}
+
 pub async fn test(host: String, log: Logger) {
+
+	// single tests
     startup(host.clone(), &log).await;  
     ping(host.clone(), 3).await; 
     get_with_headers(host.clone(), &log).await;
@@ -18,6 +52,19 @@ pub async fn test(host: String, log: Logger) {
     put_request(host.clone(), &log).await;
     delete_request(host.clone(), &log).await;
     large_payload(host.clone(), &log).await;
+	
+	// fuzzing randomly generated requests
+	let mut fuzz = Fuzzer::new(host.clone());
+	fuzz.set_paths(vec!["GET /".to_string()]);
+
+	for _ in 0..10 {
+		let str = fuzz.rand_req_str();
+		let req = Request::new(&host);
+		let res = req.send_raw(&str);
+		log.http(Logs::Debug, "fuzzing", &req, &res);
+	}
+
+	
 
 }
 

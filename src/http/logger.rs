@@ -12,14 +12,16 @@ pub enum Logs {
 	Trace,
 	ServerError,
     HttpTest,
+	Debug,
 }
 
 impl Logs {
     pub fn as_str(&self) -> &'static str {
         match *self {
 			Logs::Trace => "trace.log",
-			Logs::ServerError => "server_error.log",
-            Logs::HttpTest => "http_test.log",
+			Logs::ServerError => "error.log",
+            Logs::HttpTest => "test.log",
+			Logs::Debug => "debug.log",
         }
     }
 }
@@ -88,7 +90,6 @@ impl Logger {
             .expect("Unable to open file");
     
         writeln!(file, "{:?}: {}", self.elapsed(), message).expect("Unable to write to file");
-        writeln!(file, "\n").expect("Unable to write to file");
     }
     pub fn http(&self, file_name: Logs, label: &str, req: &Request, res: &Response) {
         let file_path = format!("{}/{}", self.log_root_dir, file_name.as_str());

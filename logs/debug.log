@@ -1,0 +1,51 @@
+
+"51ms": fuzzing
+	req: Request { host: "127.0.0.1:8080", method_and_path: "", method: GET, path: "", protocol: "HTTP/1.1", body: "", headers: {}, params: {}, context: {} }
+	res: Response { protocol: "HTTP/1.1", status: 200, body: "", headers: [("Content-Length", "298"), ("Content-Type", "text/html"), ("Zeke", "zeke and his mom rule!"), ("Zekes-Mom", "so does zeke's mom")] }
+
+
+"52ms": fuzzing
+	req: Request { host: "127.0.0.1:8080", method_and_path: "", method: GET, path: "", protocol: "HTTP/1.1", body: "", headers: {}, params: {}, context: {} }
+	res: Response { protocol: "HTTP/1.1", status: 200, body: "", headers: [("Content-Length", "298"), ("Content-Type", "text/html"), ("Zeke", "zeke and his mom rule!"), ("Zekes-Mom", "so does zeke's mom")] }
+
+
+"53ms": fuzzing
+	req: Request { host: "127.0.0.1:8080", method_and_path: "", method: GET, path: "", protocol: "HTTP/1.1", body: "", headers: {}, params: {}, context: {} }
+	res: Response { protocol: "HTTP/1.1", status: 200, body: "", headers: [("Content-Length", "298"), ("Content-Type", "text/html"), ("Zeke", "zeke and his mom rule!"), ("Zekes-Mom", "so does zeke's mom")] }
+
+
+"53ms": fuzzing
+	req: Request { host: "127.0.0.1:8080", method_and_path: "", method: GET, path: "", protocol: "HTTP/1.1", body: "", headers: {}, params: {}, context: {} }
+	res: Response { protocol: "HTTP/1.1", status: 200, body: "", headers: [("Content-Length", "298"), ("Content-Type", "text/html"), ("Zeke", "zeke and his mom rule!"), ("Zekes-Mom", "so does zeke's mom")] }
+
+
+"54ms": fuzzing
+	req: Request { host: "127.0.0.1:8080", method_and_path: "", method: GET, path: "", protocol: "HTTP/1.1", body: "", headers: {}, params: {}, context: {} }
+	res: Response { protocol: "HTTP/1.1", status: 200, body: "", headers: [("Content-Length", "298"), ("Content-Type", "text/html"), ("Zeke", "zeke and his mom rule!"), ("Zekes-Mom", "so does zeke's mom")] }
+
+
+"54ms": fuzzing
+	req: Request { host: "127.0.0.1:8080", method_and_path: "", method: GET, path: "", protocol: "HTTP/1.1", body: "", headers: {}, params: {}, context: {} }
+	res: Response { protocol: "HTTP/1.1", status: 200, body: "", headers: [("Content-Length", "298"), ("Content-Type", "text/html"), ("Zeke", "zeke and his mom rule!"), ("Zekes-Mom", "so does zeke's mom")] }
+
+
+"55ms": fuzzing
+	req: Request { host: "127.0.0.1:8080", method_and_path: "", method: GET, path: "", protocol: "HTTP/1.1", body: "", headers: {}, params: {}, context: {} }
+	res: Response { protocol: "HTTP/1.1", status: 200, body: "", headers: [("Content-Length", "298"), ("Content-Type", "text/html"), ("Zeke", "zeke and his mom rule!"), ("Zekes-Mom", "so does zeke's mom")] }
+
+
+"55ms": fuzzing
+	req: Request { host: "127.0.0.1:8080", method_and_path: "", method: GET, path: "", protocol: "HTTP/1.1", body: "", headers: {}, params: {}, context: {} }
+	res: Response { protocol: "HTTP/1.1", status: 200, body: "", headers: [("Content-Length", "298"), ("Content-Type", "text/html"), ("Zeke", "zeke and his mom rule!"), ("Zekes-Mom", "so does zeke's mom")] }
+
+
+"56ms": fuzzing
+	req: Request { host: "127.0.0.1:8080", method_and_path: "", method: GET, path: "", protocol: "HTTP/1.1", body: "", headers: {}, params: {}, context: {} }
+	res: Response { protocol: "HTTP/1.1", status: 200, body: "", headers: [("Content-Length", "298"), ("Content-Type", "text/html"), ("Zeke", "zeke and his mom rule!"), ("Zekes-Mom", "so does zeke's mom")] }
+
+
+"56ms": fuzzing
+	req: Request { host: "127.0.0.1:8080", method_and_path: "", method: GET, path: "", protocol: "HTTP/1.1", body: "", headers: {}, params: {}, context: {} }
+	res: Response { protocol: "HTTP/1.1", status: 200, body: "", headers: [("Content-Length", "298"), ("Content-Type", "text/html"), ("Zeke", "zeke and his mom rule!"), ("Zekes-Mom", "so does zeke's mom")] }
+
+
