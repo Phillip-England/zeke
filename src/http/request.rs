@@ -98,7 +98,7 @@ impl Request {
     pub fn get_host(&self) -> String {
         self.host.clone()
     }
-    pub fn get_request_string(&self) -> String {
+    pub fn raw(&self) -> String {
         let mut headers_str = String::new();
         for header in self.headers.iter() {
             headers_str.push_str(&format!("{}: {}\r\n", header.key(), header.value()));
@@ -156,7 +156,7 @@ impl Request {
         let stream = TcpStream::connect(&self.get_host());
         match stream {
             Ok(mut stream) => {
-                let request = self.get_request_string();
+                let request = self.raw();
                 match stream.write_all(request.as_bytes()) {
                     Ok(_bytes_wrote) => {
                         let mut response_bytes = Vec::new();
@@ -230,8 +230,8 @@ impl Request {
                         let parts = line.split(" ").collect::<Vec<&str>>();
 
                         if parts.len() != 3 {
-							log.log(Logs::ServerError, "incoming request was malformed and did not have 3 parts in the first line");
-                            let err = "malformed request protocol, method, or path is missing or malformed ensure request string follows the following convention 'GET /path/to/resource HTTP/1.1' or '{method} {path} {protocol}'";
+							log.log(Logs::ServerError, &format!("{:?} {:?} malformed request status line did not have exactly three parts - request status line -> {:?}", file!(), line!(), line));
+                            let err = "malformed request: status line did not have exactly three parts";
                             let res = Response::new()
                                 .status(400)
                                 .body(err);
@@ -266,11 +266,10 @@ impl Request {
                         match protocol {
                             "HTTP/1.1" => {},
                             _ => {
-								log.log(Logs::ServerError, "invalid protocol used");
-                                let err = "malformed request: protocol must be HTTP/1.1, server does not support other protocols at this time";
+								log.log(Logs::ServerError, &format!("{:?} {:?} protocol is missing or invalid - request status line -> {:?}", file!(), line!(), line));
                                 return (request, Some(Response::new()
                                     .status(400)
-                                    .body(err)
+                                    .body("protocol is missing or invalid: only HTTP/1.1 is supported")
                                 ));
                             },
                         }
@@ -292,11 +291,10 @@ impl Request {
                                 request.method = HttpMethod::PATCH;
                             },
                             _ => {
-								log.log(Logs::ServerError, "invalid method used");
-                                let err = "malformed request: method was extracted but found to be invalid";
+								log.log(Logs::ServerError, &format!("{:?} {:?} method was found to be invalid - request status line -> {:?}", file!(), line!(), line));
                                 return (request, Some(Response::new()
                                     .status(400)
-                                    .body(err)
+                                    .body("malformed request: method was extracted but found to be invalid")
                                 ));
                             },
                         }

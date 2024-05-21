@@ -1,5 +1,14 @@
 
-"5ms": invalid method used
-"6ms": incoming request was malformed and did not have 3 parts in the first line
-"6ms": incoming request was malformed and did not have 3 parts in the first line
-"7ms": invalid protocol used
+"2ms": "src/http/request.rs" 294 method was found to be invalid - request status line -> "GE / HTTP/1.1"
+"3ms": "src/http/request.rs" 233 malformed request status line did not have exactly three parts - request status line -> "/ HTTP/1.1"
+"3ms": "src/http/request.rs" 233 malformed request status line did not have exactly three parts - request status line -> "GET .1#####@@##@#"
+"3ms": "src/http/request.rs" 269 protocol is missing or invalid - request status line -> "GET / "
+"10ms": "src/http/request.rs" 233 malformed request status line did not have exactly three parts - request status line -> "TODO: how to make this string useful? HTTP/1.1"
+"19ms": "src/http/request.rs" 233 malformed request status line did not have exactly three parts - request status line -> "TODO: how to make this string useful? HTTP/1.1"
+"66ms": "src/http/request.rs" 233 malformed request status line did not have exactly three parts - request status line -> "TODO: how to make this string useful? HTTP/1.1"
+"105ms": "src/http/request.rs" 233 malformed request status line did not have exactly three parts - request status line -> "TODO: how to make this string useful? HTTP/1.1"
+"111ms": "src/http/request.rs" 233 malformed request status line did not have exactly three parts - request status line -> "TODO: how to make this string useful? HTTP/1.1"
+"126ms": "src/http/request.rs" 233 malformed request status line did not have exactly three parts - request status line -> "TODO: how to make this string useful? HTTP/1.1"
+"149ms": "src/http/request.rs" 233 malformed request status line did not have exactly three parts - request status line -> "TODO: how to make this string useful? HTTP/1.1"
+"150ms": "src/http/request.rs" 233 malformed request status line did not have exactly three parts - request status line -> "TODO: how to make this string useful? HTTP/1.1"
+"154ms": "src/http/request.rs" 233 malformed request status line did not have exactly three parts - request status line -> "TODO: how to make this string useful? HTTP/1.1"

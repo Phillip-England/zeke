@@ -91,7 +91,7 @@ impl Logger {
     
         writeln!(file, "{:?}: {}", self.elapsed(), message).expect("Unable to write to file");
     }
-    pub fn http(&self, file_name: Logs, label: &str, req: &Request, res: &Response) {
+    pub fn http(&self, file_name: Logs, label: &str, req: &String, res: &String) {
         let file_path = format!("{}/{}", self.log_root_dir, file_name.as_str());
         let directory = Path::new(&self.log_root_dir);
         if !directory.exists() {
