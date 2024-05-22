@@ -4,73 +4,78 @@
 	res: "HTTP/1.1 200\r\nZekes-Mom: so does zeke's mom\r\nContent-Type: text/html\r\nContent-Length: 298\r\nZeke: zeke and his mom rule!\r\n\r\n"
 
 
-"3ms": get_with_headers
-	req: "GET / HTTP/1.1\r\nZekes-Mom: so does zeke's mom\r\nZeke: zeke rules\r\n\r\n"
-	res: "HTTP/1.1 200\r\nZekes-Mom: so does zeke's mom\r\nZeke: zeke and his mom rule!\r\nContent-Type: text/html\r\nContent-Length: 298\r\n\r\n"
+"2ms": get_with_headers
+	req: "GET / HTTP/1.1\r\nZeke: zeke rules\r\nZekes-Mom: so does zeke's mom\r\n\r\n"
+	res: "HTTP/1.1 200\r\nZekes-Mom: so does zeke's mom\r\nContent-Type: text/html\r\nContent-Length: 298\r\nZeke: zeke and his mom rule!\r\n\r\n"
 
 
-"4ms": get_with_params
+"2ms": get_with_params
 	req: "GET /test/query_params?name=zeke&age=your_mom HTTP/1.1\r\n\r\n"
-	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nContent-Length: 306\r\n\r\n"
+	res: "HTTP/1.1 200\r\nContent-Length: 306\r\nContent-Type: text/html\r\n\r\n"
 
 
-"4ms": invalid method
+"3ms": invalid method
 	req: "GET  HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 400\r\nContent-Length: 63\r\n\r\nmalformed request: method was extracted but found to be invalid"
 
 
-"4ms": missing method
+"3ms": missing method
 	req: "GET  HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 400\r\nContent-Length: 63\r\n\r\nmalformed request: status line did not have exactly three parts"
 
 
-"5ms": invalid_protocol
+"3ms": invalid_protocol
 	req: "GET  HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 400\r\nContent-Length: 63\r\n\r\nmalformed request: status line did not have exactly three parts"
 
 
-"5ms": missing_protocol
+"4ms": missing_protocol
 	req: "GET  HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 400\r\nContent-Length: 58\r\n\r\nprotocol is missing or invalid: only HTTP/1.1 is supported"
 
 
-"6ms": post_with_body
+"4ms": post_with_body
 	req: "POST /test/post_with_body HTTP/1.1\r\n\r\nthis is a post request"
-	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nContent-Length: 308\r\n\r\n"
+	res: "HTTP/1.1 200\r\nContent-Length: 308\r\nContent-Type: text/html\r\n\r\n"
 
 
-"6ms": put_request
+"5ms": put_request
 	req: "PUT /test/put HTTP/1.1\r\n\r\n{\"name\": \"Zeke Updated\", \"age\": 26}"
 	res: "HTTP/1.1 200\r\nContent-Length: 303\r\nContent-Type: text/html\r\n\r\n"
 
 
-"6ms": delete_request
+"5ms": delete_request
 	req: "DELETE /test/delete HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nContent-Length: 306\r\n\r\n"
 
 
-"12ms": status_line_no_spaces
+"9ms": status_line_no_spaces
 	req: "GET  HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 400\r\nContent-Length: 63\r\n\r\nmalformed request: status line did not have exactly three parts"
 
 
-"12ms": malformed_header
+"9ms": malformed_header
 	req: "GET  HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 400\r\nContent-Length: 54\r\n\r\nmalformed request: header line did not contain a colon"
 
 
-"13ms": invalid_path
+"9ms": invalid_path
 	req: "GET  HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 404\r\nContent-Length: 15\r\n\r\nroute not found"
 
 
-"13ms": missing_carriages
+"10ms": missing_carriages (0)
 	req: "GET  HTTP/1.1\r\n\r\n"
-	res: "HTTP/1.1 200\r\nZeke: zeke and his mom rule!\r\nContent-Length: 298\r\nContent-Type: text/html\r\nZekes-Mom: so does zeke's mom\r\n\r\n"
+	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZekes-Mom: so does zeke's mom\r\nContent-Length: 298\r\nZeke: zeke and his mom rule!\r\n\r\n"
 
 
-"13ms": missing_carriages
+"10ms": missing_carriages (1)
 	req: "GET  HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 400\r\nContent-Length: 63\r\n\r\nmalformed request: status line did not have exactly three parts"
+
+
+"10ms": setting_cookies
+	req: "GET  HTTP/1.1\r\n\r\n"
+	res: "HTTP/1.1 200\r\nContent-Length: 304\r\nContent-Type: text/html\r\nSet-Cookie: zeke=likes cookies;\r\n\r\n"
 
 

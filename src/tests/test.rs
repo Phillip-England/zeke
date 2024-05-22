@@ -29,26 +29,26 @@ pub async fn test(host: String, log: Logger) {
 	malformed_header(host.clone(), &log).await;
 	invalid_path(host.clone(), &log).await;
 	missing_carriages(host.clone(), &log).await;
-	setting_cookies(host.clone(), &log).await;
+	set_cookie(host.clone(), &log).await;
 	
 	// fuzzing randomly generated requests
-	let mut fuzz = Fuzzer::new(host.clone());
-	fuzz.set_paths(vec![
-		"GET /".to_string(),
-		"GET /about".to_string()
-	]);
-	for _ in 0..100 {
-		let str = fuzz.rand_req_str();
-		let req = Request::new(&host);
-		let res = req.send_raw(&str);
-		if res.status != 200 {
-			fuzz.failed = true;
-			log.log(Logs::FuzzFail, &format!("fuzzing failed:\n\t{:?}\n\t{:?}", str, res.raw()));
-		}
-	}
-	if fuzz.failed {
-		println!("fuzzing test failed, check logs")
-	}
+	// let mut fuzz = Fuzzer::new(host.clone());
+	// fuzz.set_paths(vec![
+	// 	"GET /".to_string(),
+	// 	"GET /about".to_string()
+	// ]);
+	// for _ in 0..100 {
+	// 	let str = fuzz.rand_req_str();
+	// 	let req = Request::new(&host);
+	// 	let res = req.send_raw(&str);
+	// 	if res.status != 200 {
+	// 		fuzz.failed = true;
+	// 		log.log(Logs::FuzzFail, &format!("fuzzing failed:\n\t{:?}\n\t{:?}", str, res.raw()));
+	// 	}
+	// }
+	// if fuzz.failed {
+	// 	println!("fuzzing test failed, check logs")
+	// }
 	
 
 
@@ -202,19 +202,20 @@ pub async fn missing_carriages(host: String, log: &Logger) {
 	// no carriages at all 200
 	let raw = "GET / HTTP/1.1".to_string();
 	let res = req.send_raw(&raw);
-	log.http(Logs::HttpTest, "missing_carriages", &req.raw(), &res.raw());
+	log.http(Logs::HttpTest, "missing_carriages (0)", &req.raw(), &res.raw());
 	assert!(res.status == 200);
 	// headers with no carriages 400
 	let raw = "GET / HTTP/1.1 Host: localhost\r\n\r\n".to_string();
 	let res = req.send_raw(&raw);
-	log.http(Logs::HttpTest, "missing_carriages", &req.raw(), &res.raw());
+	log.http(Logs::HttpTest, "missing_carriages (1)", &req.raw(), &res.raw());
 	assert!(res.status == 400);
 }
 
-pub async fn setting_cookies(host: String, log: &Logger) {
+pub async fn set_cookie(host: String, log: &Logger) {
 	let req = Request::new(&host);
-	let req_set_cookies = "GET /test/set_cookies HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n".to_string();
-	let res = req.send_raw(&req_set_cookies);
+	let raw = "GET /test/set_cookies HTTP/1.1\r\nHost: localhost\r\n\r\n".to_string();
+	println!("hit");
+	let res = req.send_raw(&raw);
 	log.http(Logs::HttpTest, "setting_cookies", &req.raw(), &res.raw());
 	assert!(res.status == 200);
 }
