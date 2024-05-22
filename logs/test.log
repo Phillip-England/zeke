@@ -1,12 +1,12 @@
 
 "1ms": startup
 	req: "GET / HTTP/1.1\r\n\r\n"
-	res: "HTTP/1.1 200\r\nZekes-Mom: so does zeke's mom\r\nContent-Type: text/html\r\nContent-Length: 298\r\nZeke: zeke and his mom rule!\r\n\r\n"
+	res: "HTTP/1.1 200\r\nZekes-Mom: so does zeke's mom\r\nContent-Length: 298\r\nZeke: zeke and his mom rule!\r\nContent-Type: text/html\r\n\r\n"
 
 
 "2ms": get_with_headers
 	req: "GET / HTTP/1.1\r\nZeke: zeke rules\r\nZekes-Mom: so does zeke's mom\r\n\r\n"
-	res: "HTTP/1.1 200\r\nZekes-Mom: so does zeke's mom\r\nContent-Type: text/html\r\nContent-Length: 298\r\nZeke: zeke and his mom rule!\r\n\r\n"
+	res: "HTTP/1.1 200\r\nContent-Length: 298\r\nContent-Type: text/html\r\nZekes-Mom: so does zeke's mom\r\nZeke: zeke and his mom rule!\r\n\r\n"
 
 
 "2ms": get_with_params
@@ -14,7 +14,7 @@
 	res: "HTTP/1.1 200\r\nContent-Length: 306\r\nContent-Type: text/html\r\n\r\n"
 
 
-"3ms": invalid method
+"2ms": invalid method
 	req: "GET  HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 400\r\nContent-Length: 63\r\n\r\nmalformed request: method was extracted but found to be invalid"
 
@@ -39,9 +39,9 @@
 	res: "HTTP/1.1 200\r\nContent-Length: 308\r\nContent-Type: text/html\r\n\r\n"
 
 
-"5ms": put_request
+"4ms": put_request
 	req: "PUT /test/put HTTP/1.1\r\n\r\n{\"name\": \"Zeke Updated\", \"age\": 26}"
-	res: "HTTP/1.1 200\r\nContent-Length: 303\r\nContent-Type: text/html\r\n\r\n"
+	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nContent-Length: 303\r\n\r\n"
 
 
 "5ms": delete_request
@@ -49,7 +49,7 @@
 	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nContent-Length: 306\r\n\r\n"
 
 
-"9ms": status_line_no_spaces
+"8ms": status_line_no_spaces
 	req: "GET  HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 400\r\nContent-Length: 63\r\n\r\nmalformed request: status line did not have exactly three parts"
 
@@ -64,18 +64,13 @@
 	res: "HTTP/1.1 404\r\nContent-Length: 15\r\n\r\nroute not found"
 
 
-"10ms": missing_carriages (0)
+"9ms": missing_carriages (0)
 	req: "GET  HTTP/1.1\r\n\r\n"
-	res: "HTTP/1.1 200\r\nContent-Type: text/html\r\nZekes-Mom: so does zeke's mom\r\nContent-Length: 298\r\nZeke: zeke and his mom rule!\r\n\r\n"
+	res: "HTTP/1.1 200\r\nZeke: zeke and his mom rule!\r\nContent-Type: text/html\r\nZekes-Mom: so does zeke's mom\r\nContent-Length: 298\r\n\r\n"
 
 
 "10ms": missing_carriages (1)
 	req: "GET  HTTP/1.1\r\n\r\n"
 	res: "HTTP/1.1 400\r\nContent-Length: 63\r\n\r\nmalformed request: status line did not have exactly three parts"
-
-
-"10ms": setting_cookies
-	req: "GET  HTTP/1.1\r\n\r\n"
-	res: "HTTP/1.1 200\r\nContent-Length: 304\r\nContent-Type: text/html\r\nSet-Cookie: zeke=likes cookies;\r\n\r\n"
 
 

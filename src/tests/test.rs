@@ -213,9 +213,8 @@ pub async fn missing_carriages(host: String, log: &Logger) {
 
 pub async fn set_cookie(host: String, log: &Logger) {
 	let req = Request::new(&host);
-	let raw = "GET /test/set_cookies HTTP/1.1\r\nHost: localhost\r\n\r\n".to_string();
-	println!("hit");
+	let raw = "GET /test/set_cookie HTTP/1.1\r\nHost: localhost\r\n\r\n".to_string();
 	let res = req.send_raw(&raw);
-	log.http(Logs::HttpTest, "setting_cookies", &req.raw(), &res.raw());
+	log.http(Logs::HttpTest, "setting_cookie", &req.raw(), &res.raw());
 	assert!(res.status == 200);
 }

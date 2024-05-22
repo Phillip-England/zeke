@@ -159,31 +159,37 @@ impl Response {
 
 	pub fn set_cookie(&mut self, key: &str, value: &str) {
 		let current_cookies = self.headers.get("Set-Cookie");
-		if current_cookies.is_none() {
-			self.headers.insert("Set-Cookie".to_string(), format!("{}={};", key, value));
-			return
-		}
-		let cookies = current_cookies.unwrap();
-		let cookies = cookies.to_owned();
-		let cookies_str = &cookies;
-		self.headers.remove("Set-Cookie");
-		let mut cookie_exists = false;
-		let cookies = cookies.split(";").collect::<Vec<&str>>();
-		for cookie in cookies {
-			let parts = cookie.split("=").collect::<Vec<&str>>();
-			if parts.len() != 2 {
-				continue
+		// determining if ANY cookies exist
+		match current_cookies {
+			Some(cookies) => {
+				let cookies = cookies.to_owned();
+				let cookies_str = &cookies;
+				// checking if the cookie given already exists
+				if cookies.contains(&format!("{}=", key)) {
+					let cookies = cookies.split(";").collect::<Vec<&str>>();
+					let mut new_cookies = String::new();
+					for cookie in cookies {
+						let parts = cookie.split("=").collect::<Vec<&str>>();
+						if parts.len() != 2 {
+							continue
+						}
+						if parts[0] == key {
+							new_cookies.push_str(&format!("{}={};", key, value));
+						} else {
+							new_cookies.push_str(&format!("{}={};", parts[0], parts[1]));
+						}
+					}
+					self.headers.insert("Set-Cookie".to_string(), new_cookies);
+					return
+				} else {
+					self.headers.insert("Set-Cookie".to_string(), cookies_str.to_owned() + &format!("{}={};", key, value));
+					return
+				}
+			},
+			None => {
+				self.headers.insert("Set-Cookie".to_string(), format!("{}={};", key, value));
 			}
-			if parts[0] == key {
-				cookie_exists = true;
-				let _ = cookies_str.replace(&format!("{}={}", key, parts[1]), &format!("{}={}", key, value));
-				self.headers.insert("Set-Cookie".to_string(), cookies_str.clone());
-			}	
 		}
-		if cookie_exists {
-			return
-		}
-		self.headers.insert("Set-Cookie".to_string(), cookies_str.to_owned() + &format!("{}={};", key, value));
 	}
 
 	pub fn get_cookie(&self, key: &str) -> String {

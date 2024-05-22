@@ -53,7 +53,7 @@ async fn main() {
     	.group(mw_group_trace())
 	);
 
-    r.add(Route::new("GET /test/set_cookies", handle_set_cookie())
+    r.add(Route::new("GET /test/set_cookie", handle_set_cookie())
     	.group(mw_group_trace())
 	);
 

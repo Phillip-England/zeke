@@ -1,5 +1,5 @@
 
-"3ms": "src/http/request.rs" 294 method was found to be invalid - request status line -> "GE / HTTP/1.1"
+"2ms": "src/http/request.rs" 294 method was found to be invalid - request status line -> "GE / HTTP/1.1"
 
 
 "3ms": "src/http/request.rs" 233 malformed request status line did not have exactly three parts - request status line -> "/ HTTP/1.1"
@@ -8,10 +8,10 @@
 "3ms": "src/http/request.rs" 233 malformed request status line did not have exactly three parts - request status line -> "GET .1#####@@##@#"
 
 
-"4ms": "src/http/request.rs" 269 protocol is missing or invalid - request status line -> "GET / "
+"3ms": "src/http/request.rs" 269 protocol is missing or invalid - request status line -> "GET / "
 
 
-"9ms": "src/http/request.rs" 233 malformed request status line did not have exactly three parts - request status line -> "GET/HTTP/1.1"
+"8ms": "src/http/request.rs" 233 malformed request status line did not have exactly three parts - request status line -> "GET/HTTP/1.1"
 
 
 "10ms": "src/http/request.rs" 233 malformed request status line did not have exactly three parts - request status line -> "GET / HTTP/1.1 Host: localhost"
