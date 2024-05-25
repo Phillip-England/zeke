@@ -85,10 +85,9 @@ pub fn handle_set_cookie() -> Handler {
 		let mut response = Response::new()
 			.status(200)
 			.body(&base_template("Set Cookie"))
-			.set_header("Content-Type", "text/html");
-		response.set_cookie("zeke", "likes cookies");
-		response.set_cookie("zekes-mom", "lies cookies too");
-		println!("HITT");
+			.set_header("Content-Type", "text/html")
+			.set_cookie("zeke", "likes cookies")
+			.set_cookie("zekes-mom", "likes cookies too");
 		return (request, response);
 	});
 }
