@@ -2,7 +2,7 @@
 use crate::http::handler::Handler;
 use crate::http::response::Response;
 
-pub const NAVBAR: &str = "<nav><a href='/'>Home</a> | <a href='/about'>About</a> | <a href='/test/query_params?name=zeke&age=your mom'>Query Params</a></nav>";
+pub const NAVBAR: &str = "<nav><a href='/'>Home</a> | <a href='/about'>About</a> | <a href='/test/query_params?name=zeke&age=your mom'>Query Params</a> | <a href='/test/set_cookie'>Cookies</a></nav>";
 
 pub fn base_template(title: &str) -> String {
     return format!(r#"

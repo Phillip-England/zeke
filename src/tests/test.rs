@@ -30,6 +30,7 @@ pub async fn test(host: String, log: Logger) {
 	invalid_path(host.clone(), &log).await;
 	missing_carriages(host.clone(), &log).await;
 	set_cookie(host.clone(), &log).await;
+	ping(host.clone(), 3).await;
 	
 	// fuzzing randomly generated requests
 	// let mut fuzz = Fuzzer::new(host.clone());

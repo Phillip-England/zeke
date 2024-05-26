@@ -66,18 +66,22 @@ impl Request {
         };
         return request;
     }
+
     pub fn method(mut self, method: HttpMethod) -> Self {
         self.method = method;
         self
     }
+
     pub fn path(mut self, path: &str) -> Self {
         self.path = path.to_string();
         self
     }
+
     pub fn body(mut self, body: &str) -> Self {
         self.body = body.to_string();
         self
     }
+
     pub fn get_header(&self, key: &str) -> String {
         match self.headers.get(key) {
             Some(value) => {
@@ -88,16 +92,35 @@ impl Request {
             },
         }
     }
+
     pub fn header(self, key: &str, value: &str) -> Self {
         self.headers.insert(key.to_string(), value.to_string());
         self
     }
+
+	pub fn get_context<K: Contextable>(&self, key: K) -> String {
+        match self.context.get(key.key()) {
+            Some(value) => {
+                return value.to_string();
+            },
+            None => {
+                return "".to_string();
+            },
+        }
+    }
+
+    pub fn set_context<K: Contextable>(&mut self, key: K, value: String) {
+        self.context.insert(key.key().to_string(), value.to_string());
+    }
+
     pub fn get_url(&self) -> String {
         self.host.clone() + &self.path
     }
+
     pub fn get_host(&self) -> String {
         self.host.clone()
     }
+
     pub fn raw(&self) -> String {
         let mut headers_str = String::new();
         for header in self.headers.iter() {
@@ -208,146 +231,132 @@ impl Request {
             context: DashMap::new(),
             params: DashMap::new(),
         };
+		// TODO: investagate this line
         let end = request_bytes.iter().position(|&x| x == 0).unwrap_or(request_bytes.len());
         let request_string = String::from_utf8(request_bytes[..end].to_vec());
-        match request_string {
-            Err(e) => {
-				log.log(Logs::ServerError, &format!("failed to parse request: {}", e));
-                let err = "failed to parse request";
-                return (request, Some(Response::new()
-                    .status(400)
-                    .body(err)
-                ));
-            }
-            Ok(request_string) => {
-                let lines: Vec<&str> = request_string.lines().collect();
-                for i in 0..lines.len() {
-                    let line = lines[i];
-                    // FIRST LINE
-                    // method, path, protocol
-                    if i == 0 {
-                        // COLLECTING PARTS OF FIRST LINE
-                        let parts = line.split(" ").collect::<Vec<&str>>();
-
-                        if parts.len() != 3 {
-							log.log(Logs::ServerError, &format!("{:?} {:?} malformed request status line did not have exactly three parts - request status line -> {:?}", file!(), line!(), line));
-                            let err = "malformed request: status line did not have exactly three parts";
-                            let res = Response::new()
-                                .status(400)
-                                .body(err);
-                            return (request, Some(res));
-                        }
-                        let method = parts[0];
-                        let path = parts[1];
-                        // EXTRACTING QUERY PARAMS FROM PATH
-                        let mut param_string = String::new();
-                        let params = path.split("?").collect::<Vec<&str>>();
-                        if params.len() > 1 {
-                            request.path = params[0].to_string();
-                            request.method_and_path = format!("{} {}", method, params[0]);
-                            param_string = params[1].to_string();
-                        } else {
-                            request.path = path.to_string();
-                            request.method_and_path = format!("{} {}", method, path);
-                        }
-                        let params = param_string.split("&").collect::<Vec<&str>>();
-                        for param in params {
-                            let parts = param.split("=").collect::<Vec<&str>>();
-                            if parts.len() != 2 {
-                                continue
-                            }
-                            let key = parts[0];
-                            let value = parts[1];
-                            request.params.insert(key.to_string(), value.to_string());
-                        }
-                        // EXTRACTING PROTOCOL
-                        // TODO: figure out how to handle other protocols
-                        let protocol = parts[2];
-                        match protocol {
-                            "HTTP/1.1" => {},
-                            _ => {
-								log.log(Logs::ServerError, &format!("{:?} {:?} protocol is missing or invalid - request status line -> {:?}", file!(), line!(), line));
-                                return (request, Some(Response::new()
-                                    .status(400)
-                                    .body("protocol is missing or invalid: only HTTP/1.1 is supported")
-                                ));
-                            },
-                        }
-                        // ENSURING THE METHOD IS VALID
-                        match method {
-                            "GET" => {
-                                request.method = HttpMethod::GET;
-                            },
-                            "POST" => {
-                                request.method = HttpMethod::POST;
-                            },
-                            "PUT" => {
-                                request.method = HttpMethod::PUT;
-                            },
-                            "DELETE" => {
-                                request.method = HttpMethod::DELETE;
-                            },
-                            "PATCH" => {
-                                request.method = HttpMethod::PATCH;
-                            },
-                            _ => {
-								log.log(Logs::ServerError, &format!("{:?} {:?} method was found to be invalid - request status line -> {:?}", file!(), line!(), line));
-                                return (request, Some(Response::new()
-                                    .status(400)
-                                    .body("malformed request: method was extracted but found to be invalid")
-                                ));
-                            },
-                        }
-                        request.protocol = protocol.to_string();
-                        continue
-                    }
-                    // LAST LINE
-                    // request body
-                    if i == lines.len() - 1 {
-                        request.body = line.to_string();
-                        continue
-                    }
-                    // EMPTY LINES
-                    // headers
-                    if line.len() == 0 { // empty line
-                        continue
-                    }
-                    // HEADERS
-                    // ANY LINE THAT IS NOT THE FIRST OR LAST
-                    let trimmed_line = line.replace(" ", "");
-					if trimmed_line.contains(":") == false {
+		if let Err(request_string) = request_string {
+			log.log(Logs::ServerError, &format!("failed to parse request: {:?}", request_string));
+			let err = "failed to parse request";
+			return (request, Some(Response::new()
+				.status(400)
+				.body(err)
+			));
+		}
+		let request_string = request_string.unwrap();
+		let lines: Vec<&str> = request_string.lines().collect();
+		for i in 0..lines.len() {
+			let line = lines[i];
+			// FIRST LINE
+			// method, path, protocol
+			if i == 0 {
+				// COLLECTING PARTS OF FIRST LINE
+				let parts = line.split(" ").collect::<Vec<&str>>();
+				if parts.len() != 3 {
+					log.log(Logs::ServerError, &format!("{:?} {:?} malformed request status line did not have exactly three parts - request status line -> {:?}", file!(), line!(), line));
+					let err = "malformed request: status line did not have exactly three parts";
+					let res = Response::new()
+						.status(400)
+						.body(err);
+					return (request, Some(res));
+				}
+				let method = parts[0];
+				let path = parts[1];
+				// EXTRACTING QUERY PARAMS FROM PATH
+				let mut param_string = String::new();
+				let params = path.split("?").collect::<Vec<&str>>();
+				if params.len() > 1 {
+					request.path = params[0].to_string();
+					request.method_and_path = format!("{} {}", method, params[0]);
+					param_string = params[1].to_string();
+				} else {
+					request.path = path.to_string();
+					request.method_and_path = format!("{} {}", method, path);
+				}
+				let params = param_string.split("&").collect::<Vec<&str>>();
+				for param in params {
+					let parts = param.split("=").collect::<Vec<&str>>();
+					if parts.len() != 2 {
+						continue
+					}
+					let key = parts[0];
+					let value = parts[1];
+					request.params.insert(key.to_string(), value.to_string());
+				}
+				// EXTRACTING PROTOCOL
+				// TODO: figure out how to handle other protocols
+				let protocol = parts[2];
+				match protocol {
+					"HTTP/1.1" => {},
+					_ => {
+						log.log(Logs::ServerError, &format!("{:?} {:?} protocol is missing or invalid - request status line -> {:?}", file!(), line!(), line));
 						return (request, Some(Response::new()
 							.status(400)
-							.body("malformed request: header line did not contain a colon")
+							.body("protocol is missing or invalid: only HTTP/1.1 is supported")
 						));
-					}
-                    let parts = trimmed_line.split(":").collect::<Vec<&str>>();
-                    if parts.len() != 2 {
-                        continue
-                    }
-                    let key = parts[0];
-                    let value = parts[1];
-                    request.headers.insert(key.to_string(), value.to_string());
-    
-                }
-                return (request, None);
-            }
-        }
-    }
-
-    pub fn get_context<K: Contextable>(&self, key: K) -> String {
-        match self.context.get(key.key()) {
-            Some(value) => {
-                return value.to_string();
-            },
-            None => {
-                return "".to_string();
-            },
-        }
-    }
-
-    pub fn set_context<K: Contextable>(&mut self, key: K, value: String) {
-        self.context.insert(key.key().to_string(), value.to_string());
+					},
+				}
+				// ENSURING THE METHOD IS VALID
+				match method {
+					"GET" => {
+						request.method = HttpMethod::GET;
+					},
+					"POST" => {
+						request.method = HttpMethod::POST;
+					},
+					"PUT" => {
+						request.method = HttpMethod::PUT;
+					},
+					"DELETE" => {
+						request.method = HttpMethod::DELETE;
+					},
+					"PATCH" => {
+						request.method = HttpMethod::PATCH;
+					},
+					_ => {
+						log.log(Logs::ServerError, &format!("{:?} {:?} method was found to be invalid - request status line -> {:?}", file!(), line!(), line));
+						return (request, Some(Response::new()
+							.status(400)
+							.body("malformed request: method was extracted but found to be invalid")
+						));
+					},
+				}
+				request.protocol = protocol.to_string();
+				continue
+			}
+			// LAST LINE
+			// request body
+			if i == lines.len() - 1 {
+				request.body = line.to_string();
+				continue
+			}
+			// EMPTY LINES
+			if line.len() == 0 {
+				continue
+			}
+			// HEADERS
+			// ANY LINE THAT IS NOT THE FIRST OR LAST IS A HEADER
+			let trimmed_line = line.replace(" ", "");
+			if trimmed_line.contains(":") == false {
+				return (request, Some(Response::new()
+					.status(400)
+					.body("malformed request: header line did not contain a colon")
+				));
+			}
+			let parts = trimmed_line.split(":").collect::<Vec<&str>>();
+			if parts.len() != 2 {
+				continue
+			}
+			let key = parts[0];
+			let value = parts[1];
+			println!("key: {}, value: {}", key, value);
+			if key != "Cookie" {
+				request.headers.insert(key.to_string(), value.to_string());
+				continue
+			}
+			log.log(Logs::Debug, &format!("key: {}, value: {}", key, value));
+			let cookies = value.split(";").collect::<Vec<&str>>();
+		}
+		return (request, None);
     }
 
 }
