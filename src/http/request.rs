@@ -348,13 +348,14 @@ impl Request {
 			}
 			let key = parts[0];
 			let value = parts[1];
-			println!("key: {}, value: {}", key, value);
 			if key != "Cookie" {
 				request.headers.insert(key.to_string(), value.to_string());
 				continue
 			}
-			log.log(Logs::Debug, &format!("key: {}, value: {}", key, value));
 			let cookies = value.split(";").collect::<Vec<&str>>();
+			for cookie_string in cookies {
+				println!("cookie_string: {:?}", cookie_string);
+			}
 		}
 		return (request, None);
     }

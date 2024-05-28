@@ -157,6 +157,7 @@ impl Response {
 		return header.unwrap().to_string();
     }
 
+	// Set-Cookie: sessionId=abc123; Expires=Wed, 09 Jun 2021 10:18:14 GMT; Max-Age=3600; Domain=example.com; Path=/; Secure; HttpOnly; SameSite=Strict
 	pub fn set_cookie(mut self, key: &str, value: &str) -> Self {
 		let current_cookies = self.get_header("Set-Cookie");
 		if current_cookies.len() == 0 {

@@ -1,19 +1,19 @@
 
-"3ms": "src/http/request.rs" 316 method was found to be invalid - request status line -> "GE / HTTP/1.1"
+"4ms": "src/http/request.rs" 316 method was found to be invalid - request status line -> "GE / HTTP/1.1"
 
 
-"3ms": "src/http/request.rs" 255 malformed request status line did not have exactly three parts - request status line -> "/ HTTP/1.1"
+"4ms": "src/http/request.rs" 255 malformed request status line did not have exactly three parts - request status line -> "/ HTTP/1.1"
 
 
 "4ms": "src/http/request.rs" 255 malformed request status line did not have exactly three parts - request status line -> "GET .1#####@@##@#"
 
 
-"4ms": "src/http/request.rs" 291 protocol is missing or invalid - request status line -> "GET / "
+"5ms": "src/http/request.rs" 291 protocol is missing or invalid - request status line -> "GET / "
 
 
-"10ms": "src/http/request.rs" 255 malformed request status line did not have exactly three parts - request status line -> "GET/HTTP/1.1"
+"11ms": "src/http/request.rs" 255 malformed request status line did not have exactly three parts - request status line -> "GET/HTTP/1.1"
 
 
-"11ms": "src/http/request.rs" 255 malformed request status line did not have exactly three parts - request status line -> "GET / HTTP/1.1 Host: localhost"
+"13ms": "src/http/request.rs" 255 malformed request status line did not have exactly three parts - request status line -> "GET / HTTP/1.1 Host: localhost"
 
 
