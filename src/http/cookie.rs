@@ -1,6 +1,31 @@
 use time::{Duration, OffsetDateTime, format_description::FormatItem, macros::format_description};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+pub struct CookieJar {
+    pub cookies: Vec<Cookie>,
+}
+
+impl CookieJar {
+    pub fn new() -> CookieJar {
+        CookieJar {
+            cookies: Vec::new(),
+        }
+    }
+    pub fn add(&mut self, cookie: Cookie) {
+        self.cookies.push(cookie);
+    }
+    pub fn get(&self, name: &str) -> Option<&Cookie> {
+        self.cookies.iter().find(|cookie| cookie.name == name)
+    }
+    pub fn remove(&mut self, name: &str) {
+        self.cookies.retain(|cookie| cookie.name != name);
+    }
+    pub fn to_string(&self) -> String {
+        self.cookies.iter().map(|cookie| cookie.to_string()).collect::<Vec<String>>().join("; ")
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct Cookie {
     pub name: String,
     pub value: String,

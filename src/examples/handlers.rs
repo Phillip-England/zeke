@@ -15,6 +15,7 @@ pub fn base_template(title: &str) -> String {
             </head>
             <body>
                 {}
+                <h1>Hello, World</h1>
             </body>
         </html>
     "#, title, NAVBAR);
@@ -85,8 +86,9 @@ pub fn handle_delete() -> Handler {
 
 pub fn handle_set_cookie() -> Handler {
 	return Handler::new(|request| {
-        let zeke_cookie = request.get_cookie("zeke");
-        println!("zeke cookie: {:?}", zeke_cookie);
+        println!("COOKIES: {:?}", request.cookies);
+        let zekes_mom_cookie = request.get_cookie("zekes mom");
+        println!("Zekes Mom Cookie: {:?}", zekes_mom_cookie);
 		let response = Response::new()
 			.status(200)
 			.body(&base_template("Set Cookie"))
@@ -98,8 +100,15 @@ pub fn handle_set_cookie() -> Handler {
                     .path("/")
                     .secure(false)
                     .http_only(false)
+            )
+            .set_cookie(
+                Cookie::new("zekes mom", "likes cookies too")
+                    .expires(OffsetDateTime::now_utc() + Duration::days(1))
+                    .domain("")
+                    .path("/")
+                    .secure(false)
+                    .http_only(false)
             );
-			// .set_cookie(Cookie::new("zekes mom", "likes cookies too"));
 		return (request, response);
 	});
 }

@@ -1,7 +1,9 @@
 use dashmap::DashMap;
 
 
-use crate::http::cookie::Cookie;
+use crate::http::cookie::{CookieJar, Cookie};
+
+use super::cookie;
 
 
 pub type PotentialResponse = Option<Response>;
@@ -14,6 +16,7 @@ pub struct Response {
     pub status: u16,
     pub body: String,
     pub headers: ResponseHeaders,
+    pub cookies: CookieJar,
 }
 
 impl Response {
@@ -23,6 +26,7 @@ impl Response {
             status: 200,
             body: "".to_string(),
             headers: DashMap::new(),
+            cookies: CookieJar::new(),
         };
         return res;
     }
@@ -31,6 +35,9 @@ impl Response {
         for header in &self.headers {
 			let (key, value) = header.pair();
             header_string.push_str(&format!("{}: {}\r\n", key, value));
+        }
+        for cookie in &self.cookies.cookies {
+            header_string.push_str(&format!("Set-Cookie: {}\r\n", cookie.to_string()));
         }
         let full_response = format!(
             "{} {}\r\n{}\r\n{}",
@@ -136,6 +143,9 @@ impl Response {
 			let (key, value) = header.pair();
             header_string.push_str(&format!("{}: {}\r\n", key, value));
         }
+        for cookie in &self.cookies.cookies {
+            header_string.push_str(&format!("Set-Cookie: {}\r\n", cookie.to_string()));
+        }
         // Now create the full response with status line, headers, and body
         let full_response = format!(
             "HTTP/1.1 {}\r\n{}\r\n{}",
@@ -159,36 +169,10 @@ impl Response {
     }
 
 	// Set-Cookie: sessionId=abc123; Expires=Wed, 09 Jun 2021 10:18:14 GMT; Max-Age=3600; Domain=example.com; Path=/; Secure; HttpOnly; SameSite=Strict
-	pub fn set_cookie(mut self, cookie: Cookie) -> Self {
-		let cookies = self.get_header("Set-Cookie");
-        if cookies.len() == 0 {
-            self.headers.insert("Set-Cookie".to_string(), cookie.to_string());
-            return self;
-        }
-		let cookies_split = cookies.split(";").collect::<Vec<&str>>();
-        for line in cookies_split {
-            // skipping all cookies lines that dont contain the cookie name
-            // if !line.contains(&cookie.name) {
-            //     continue;
-            // }
-        }
-		// for cookie in cookies {
-		// 	if !cookie.contains("=") {
-		// 		continue;
-		// 	}
-		// 	let parts = cookie.split("=").collect::<Vec<&str>>();
-		// 	if parts.len() != 2 {
-		// 		continue
-		// 	}
-		// 	let cookie_key = parts[0];
-		// 	let cookie_value = parts[1];
-		// 	if cookie_key == key {
-		// 		continue;
-		// 	}
-		// 	self.headers.insert("Set-Cookie".to_string(), format!("{}={};", key, value));
-		// }
-		return self;
-	}
+    pub fn set_cookie(mut self, cookie: Cookie) -> Self {
+        self.cookies.add(cookie);        
+        self
+    }
 
 	pub fn get_cookie(&self, key: &str) -> String {
 		let cookies = self.headers.get("Cookie");
@@ -218,5 +202,6 @@ pub fn not_found() -> Response {
         status: 404,
         body: "Not Found".to_string(),
         headers: DashMap::new(),
+        cookies: CookieJar::new(),
     }
 }

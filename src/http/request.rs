@@ -5,6 +5,7 @@ use dashmap::DashMap;
 
 use crate::http::response::{PotentialResponse, Response};
 
+use super::cookie::{Cookie, CookieJar};
 use super::logger::{Logger, Logs};
 
 #[derive(Debug, Clone)]
@@ -49,7 +50,7 @@ pub struct Request {
     pub headers: Headers,
     pub params: Params,
     pub context: Context,
-    pub cookies: DashMap<String, String>,
+    pub cookies: CookieJar,
 }
 
 impl Request {
@@ -64,7 +65,7 @@ impl Request {
             headers: DashMap::new(),
             params: DashMap::new(),
             context: DashMap::new(),
-            cookies: DashMap::new(),
+            cookies: CookieJar::new(),
         };
         return request;
     }
@@ -116,9 +117,10 @@ impl Request {
     }
 
     pub fn get_cookie(&self, key: &str) -> String {
-        match self.cookies.get(key) {
-            Some(value) => {
-                return value.to_string();
+        let cookie = self.cookies.get(key);
+        match cookie {
+            Some(cookie) => {
+                return cookie.value.to_string();
             },
             None => {
                 return "".to_string();
@@ -243,7 +245,7 @@ impl Request {
             headers: DashMap::new(),
             context: DashMap::new(),
             params: DashMap::new(),
-            cookies: DashMap::new(),
+            cookies: CookieJar::new(),
         };
 		// TODO: investagate this line
         let end = request_bytes.iter().position(|&x| x == 0).unwrap_or(request_bytes.len());
@@ -349,14 +351,13 @@ impl Request {
 			}
 			// HEADERS
 			// ANY LINE THAT IS NOT THE FIRST OR LAST IS A HEADER
-			let trimmed_line = line.replace(" ", "");
-			if trimmed_line.contains(":") == false {
+			if line.contains(":") == false {
 				return (request, Some(Response::new()
 					.status(400)
 					.body("malformed request: header line did not contain a colon")
 				));
 			}
-			let parts = trimmed_line.split(":").collect::<Vec<&str>>();
+			let parts = line.split(":").collect::<Vec<&str>>();
 			if parts.len() != 2 {
 				continue
 			}
@@ -368,16 +369,16 @@ impl Request {
 				continue
 			}
             // COOKIES
-			let cookie_header_split = value.split(";").collect::<Vec<&str>>();
-			for kv_pairs in cookie_header_split {
-				let kv_pairs_split = kv_pairs.split("=").collect::<Vec<&str>>();
-                if kv_pairs_split.len() != 2 {
+			let cookies = value.split("; ").collect::<Vec<&str>>();
+            for cookie in cookies {
+                let parts = cookie.split("=").collect::<Vec<&str>>();
+                if parts.len() != 2 {
                     continue
                 }
-                let key = kv_pairs_split[0];
-                let value = kv_pairs_split[1];
-                request.cookies.insert(key.to_string(), value.to_string());
-			}
+                let key = parts[0];
+                let value = parts[1];
+                request.cookies.add(Cookie::new(key, value));
+            }
 		}
 		return (request, None);
     }
