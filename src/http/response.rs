@@ -3,7 +3,6 @@ use dashmap::DashMap;
 
 use crate::http::cookie::{CookieJar, Cookie};
 
-use super::cookie;
 
 
 pub type PotentialResponse = Option<Response>;
@@ -115,7 +114,7 @@ impl Response {
 					}
 
 
-                    // headers
+                    // HEADERS
 					// if a header doesnt contain a colon, skip it
 					// TODO: is this the best way to handle this?
 					// TODO: should we return an error response instead?
@@ -130,8 +129,13 @@ impl Response {
 					}
 					let key = parts[0].trim();
 					let value = parts[1].trim();
-					response.headers.insert(key.to_string(), value.to_string());
-                
+                    // if not a cookie, just insert
+                    if key.to_lowercase() != "set-cookie" {
+                        response.headers.insert(key.to_string(), value.to_string());
+                        continue;
+                    }
+                    // if a cookie, parse and insert
+                    println!("key: {}, value: {}", key, value);
 				}
                 return response;
             }

@@ -7,7 +7,7 @@ use zeke::http::logger::{Logger, Logs};
 use zeke::http::router::{Route, Router};
 
 use zeke::examples::{
-    handlers::{handle_home, handle_about, handle_query_params, handle_post_with_body, handle_put, handle_delete},
+    handlers::{handle_home, handle_about, handle_query_params, handle_clear_cookie, handle_post_with_body, handle_put, handle_delete},
     middleware::mw_group_trace,
 };
 
@@ -56,6 +56,10 @@ async fn main() {
     r.add(Route::new("GET /test/set_cookie", handle_set_cookie())
     	.group(mw_group_trace())
 	);
+
+    r.add(Route::new("GET /test/clear_cookie", handle_clear_cookie())
+    .group(mw_group_trace())
+);
 
 
 	let c_log = log.clone();

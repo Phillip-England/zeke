@@ -1,14 +1,13 @@
 
 
 
-use std::path;
 
-use rand::Rng;
+use std::time::Duration;
+
+use tokio::time::sleep;
 
 use crate::http::logger::{Logger, Logs};
-use crate::http::timer::{Time, Timer};
 use crate::http::request::{Request, HttpMethod};
-use crate::http::fuzzer::Fuzzer;
 
 pub async fn test(host: String, log: Logger) {
 
@@ -30,7 +29,7 @@ pub async fn test(host: String, log: Logger) {
 	invalid_path(host.clone(), &log).await;
 	missing_carriages(host.clone(), &log).await;
 	set_cookie(host.clone(), &log).await;
-	ping(host.clone(), 3).await;
+    clear_cookie(host.clone(), &log).await;
 	
 	// fuzzing randomly generated requests
 	// let mut fuzz = Fuzzer::new(host.clone());
@@ -216,6 +215,15 @@ pub async fn set_cookie(host: String, log: &Logger) {
 	let req = Request::new(&host);
 	let raw = "GET /test/set_cookie HTTP/1.1\r\nHost: localhost\r\n\r\n".to_string();
 	let res = req.send_raw(&raw);
-	log.http(Logs::HttpTest, "setting_cookie", &req.raw(), &res.raw());
+	log.http(Logs::HttpTest, "set_cookie", &req.raw(), &res.raw());
+	assert!(res.status == 200);
+}
+
+pub async fn clear_cookie(host: String, log: &Logger) {
+	let req = Request::new(&host);
+	let raw = "GET /test/clear_cookie HTTP/1.1\r\nHost: localhost\r\n\r\n".to_string();
+	let res = req.send_raw(&raw);
+    println!("{:?}", res);
+	log.http(Logs::HttpTest, "clear_cookie", &req.raw(), &res.raw());
 	assert!(res.status == 200);
 }

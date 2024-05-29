@@ -1,4 +1,4 @@
-use time::{Duration, OffsetDateTime, format_description::FormatItem, macros::format_description};
+use time::{OffsetDateTime, macros::format_description};
 
 #[derive(Debug, Clone)]
 pub struct CookieJar {
