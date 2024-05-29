@@ -230,11 +230,11 @@ impl Request {
             },
         }
     }
-    pub fn new_from_bytes(request_bytes: RequestBuffer, log: &Arc<Logger>) -> (Request, PotentialResponse) {
-        let (request, potential_response) = Request::parse_request_bytes(request_bytes, log);
+    pub fn new_from_bytes(request_bytes: RequestBuffer) -> (Request, PotentialResponse) {
+        let (request, potential_response) = Request::parse_request_bytes(request_bytes);
         return (request, potential_response);
     }
-    pub fn parse_request_bytes(request_bytes: RequestBuffer, log: &Arc<Logger>) -> (Request, PotentialResponse) {
+    pub fn parse_request_bytes(request_bytes: RequestBuffer) -> (Request, PotentialResponse) {
         let mut request = Request{
             method_and_path: "".to_string(),
             method: HttpMethod::GET,
@@ -251,7 +251,6 @@ impl Request {
         let end = request_bytes.iter().position(|&x| x == 0).unwrap_or(request_bytes.len());
         let request_string = String::from_utf8(request_bytes[..end].to_vec());
 		if let Err(request_string) = request_string {
-			log.log(Logs::ServerError, &format!("failed to parse request: {:?}", request_string));
 			let err = "failed to parse request";
 			return (request, Some(Response::new()
 				.status(400)
@@ -268,7 +267,6 @@ impl Request {
 				// COLLECTING PARTS OF FIRST LINE
 				let parts = line.split(" ").collect::<Vec<&str>>();
 				if parts.len() != 3 {
-					log.log(Logs::ServerError, &format!("{:?} {:?} malformed request status line did not have exactly three parts - request status line -> {:?}", file!(), line!(), line));
 					let err = "malformed request: status line did not have exactly three parts";
 					let res = Response::new()
 						.status(400)
@@ -304,7 +302,6 @@ impl Request {
 				match protocol {
 					"HTTP/1.1" => {},
 					_ => {
-						log.log(Logs::ServerError, &format!("{:?} {:?} protocol is missing or invalid - request status line -> {:?}", file!(), line!(), line));
 						return (request, Some(Response::new()
 							.status(400)
 							.body("protocol is missing or invalid: only HTTP/1.1 is supported")
@@ -329,7 +326,6 @@ impl Request {
 						request.method = HttpMethod::PATCH;
 					},
 					_ => {
-						log.log(Logs::ServerError, &format!("{:?} {:?} method was found to be invalid - request status line -> {:?}", file!(), line!(), line));
 						return (request, Some(Response::new()
 							.status(400)
 							.body("malformed request: method was extracted but found to be invalid")

@@ -10,8 +10,6 @@ use crate::http::socket::connect_socket;
 
 use dashmap::DashMap;
 
-use super::logger::{Logger, Logs};
-
 pub type RouteHandler = (Handler, Middlewares, Middlewares);
 
 pub type Routes = DashMap<&'static str, Arc<Mutex<RouteHandler>>>;
@@ -33,22 +31,16 @@ impl Router {
         self.routes.insert(route.path, handler_mutex);
         return self;
     }
-    pub async fn serve(self: Router, addr: &str, log: Logger) -> Option<Error> {
-        let listener = tokio::net::TcpListener::bind(&addr).await;
-        let router: Arc<Router> = Arc::new(self);
-		let log: Arc<Logger> = Arc::new(log);
-        match listener {
-            Ok(ref listener) => {
-                loop {
-                    let router: Arc<Router> = Arc::clone(&router); // TODO: is cloning the router bad?
-					let log: Arc<Logger> = Arc::clone(&log);
-                    connect_socket(listener, router, log).await; 
-                }
-            },
-            Err(e) => {
-                return Some(e);
-            },
-        }
+    pub async fn serve(self: Router, addr: &str) -> Result<(), Error> {
+		let listener = tokio::net::TcpListener::bind(&addr).await;
+		if listener.is_err() {
+			return Result::Err(listener.err().unwrap());
+		}
+		let listener = listener.unwrap();
+		let router: Arc<Router> = Arc::new(self);
+		loop {
+			connect_socket(&listener, Arc::clone(&router)).await; 
+		}
     }
 }
 
