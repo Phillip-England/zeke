@@ -1,6 +1,7 @@
 use dashmap::DashMap;
 
 
+use crate::http::cookie::Cookie;
 
 
 pub type PotentialResponse = Option<Response>;
@@ -158,28 +159,30 @@ impl Response {
     }
 
 	// Set-Cookie: sessionId=abc123; Expires=Wed, 09 Jun 2021 10:18:14 GMT; Max-Age=3600; Domain=example.com; Path=/; Secure; HttpOnly; SameSite=Strict
-	pub fn set_cookie(mut self, key: &str, value: &str) -> Self {
-		let current_cookies = self.get_header("Set-Cookie");
-		if current_cookies.len() == 0 {
-			self.headers.insert("Set-Cookie".to_string(), format!("{}={};", key, value));
-			return self;
-		}
-		let cookies = current_cookies.split(";").collect::<Vec<&str>>();
-		for cookie in cookies {
-			if !cookie.contains("=") {
-				continue;
-			}
-			let parts = cookie.split("=").collect::<Vec<&str>>();
-			if parts.len() != 2 {
-				continue
-			}
-			let cookie_key = parts[0];
-			let cookie_value = parts[1];
-			if cookie_key == key {
-				continue;
-			}
-			self.headers.insert("Set-Cookie".to_string(), format!("{}={};", key, value));
-		}
+	pub fn set_cookie(mut self, cookie: Cookie) -> Self {
+        println!("{:?}", cookie.to_string());
+		let cookies = self.get_header("Set-Cookie");
+        if cookies.len() == 0 {
+            self.headers.insert("Set-Cookie".to_string(), cookie.to_string());
+            return self;
+        }
+		let cookies_split = cookies.split(";").collect::<Vec<&str>>();
+        println!("{:?}", cookies_split);
+		// for cookie in cookies {
+		// 	if !cookie.contains("=") {
+		// 		continue;
+		// 	}
+		// 	let parts = cookie.split("=").collect::<Vec<&str>>();
+		// 	if parts.len() != 2 {
+		// 		continue
+		// 	}
+		// 	let cookie_key = parts[0];
+		// 	let cookie_value = parts[1];
+		// 	if cookie_key == key {
+		// 		continue;
+		// 	}
+		// 	self.headers.insert("Set-Cookie".to_string(), format!("{}={};", key, value));
+		// }
 		return self;
 	}
 

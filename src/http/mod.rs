@@ -7,3 +7,4 @@ pub mod handler;
 pub mod logger;
 pub mod timer;
 pub mod fuzzer;
+pub mod cookie;

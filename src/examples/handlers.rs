@@ -1,8 +1,11 @@
 
+use time::{Duration, OffsetDateTime};
+
+use crate::http::cookie::Cookie;
 use crate::http::handler::Handler;
 use crate::http::response::Response;
 
-pub const NAVBAR: &str = "<nav><a href='/'>Home</a> | <a href='/about'>About</a> | <a href='/test/query_params?name=zeke&age=your mom'>Query Params</a> | <a href='/test/set_cookie'>Cookies</a></nav>";
+pub const NAVBAR: &str = "<nav><a href='/'>Home</a> | <a href='/about'>About</a> | <a href='/test/query_params?name=zeke&age=your mom'>Query Params</a> | <a href='/test/set_cookie'>Set Cookies</a></nav>";
 
 pub fn base_template(title: &str) -> String {
     return format!(r#"
@@ -82,12 +85,19 @@ pub fn handle_delete() -> Handler {
 
 pub fn handle_set_cookie() -> Handler {
 	return Handler::new(|request| {
-		let mut response = Response::new()
+		let response = Response::new()
 			.status(200)
 			.body(&base_template("Set Cookie"))
 			.set_header("Content-Type", "text/html")
-			.set_cookie("zeke", "likes cookies")
-			.set_cookie("zekes-mom", "likes cookies too");
+			.set_cookie(
+                Cookie::new("zeke", "likes cookies")
+                    .expires(Duration::days(1))
+                    .domain("")
+                    .path("/")
+                    .secure(false)
+                    .http_only(false)
+            );
+			// .set_cookie(Cookie::new("zekes mom", "likes cookies too"));
 		return (request, response);
 	});
 }

@@ -1,5 +1,6 @@
-use time::{OffsetDateTime, format_description::well_known::Rfc2822};
+use time::{Duration, OffsetDateTime, format_description::FormatItem, macros::format_description};
 
+#[derive(Debug)]
 pub struct Cookie {
     pub name: String,
     pub value: String,
@@ -27,7 +28,9 @@ impl Cookie {
         }
     }
 
-    pub fn expires(mut self, expires: OffsetDateTime) -> Cookie {
+    pub fn expires(mut self, duration: Duration) -> Cookie {
+        let now = OffsetDateTime::now_utc();
+        let expires = now + duration;
         self.expires = Some(expires);
         self
     }
@@ -62,11 +65,17 @@ impl Cookie {
         self
     }
 
+    fn format_expires(expires: &OffsetDateTime) -> String {
+        // Format following: "Wdy, DD Mon YYYY HH:MM:SS GMT"
+        let format = format_description!("[weekday repr:short], [day] [month repr:short] [year] [hour]:[minute]:[second] GMT");
+        expires.format(&format).unwrap()
+    }
+
     pub fn to_string(&self) -> String {
         let mut cookie = format!("{}={}", self.name, self.value);
 
         if let Some(expires) = &self.expires {
-            cookie.push_str(&format!("; Expires={}", expires.format(&Rfc2822).unwrap()));
+            cookie.push_str(&format!("; Expires={}", Cookie::format_expires(expires)));
         }
 
         if let Some(max_age) = &self.max_age {

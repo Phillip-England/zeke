@@ -16,3 +16,4 @@ dashmap = "5.5.3"
 reqwest = "0.12.4"
 dotenv = "0.15"
 rand = "0.8.5"
+time = { version = "0.3", features = ["formatting", "macros"] }
