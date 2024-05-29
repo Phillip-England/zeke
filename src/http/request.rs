@@ -49,6 +49,7 @@ pub struct Request {
     pub headers: Headers,
     pub params: Params,
     pub context: Context,
+    pub cookies: DashMap<String, String>,
 }
 
 impl Request {
@@ -63,6 +64,7 @@ impl Request {
             headers: DashMap::new(),
             params: DashMap::new(),
             context: DashMap::new(),
+            cookies: DashMap::new(),
         };
         return request;
     }
@@ -111,6 +113,17 @@ impl Request {
 
     pub fn set_context<K: Contextable>(&mut self, key: K, value: String) {
         self.context.insert(key.key().to_string(), value.to_string());
+    }
+
+    pub fn get_cookie(&self, key: &str) -> String {
+        match self.cookies.get(key) {
+            Some(value) => {
+                return value.to_string();
+            },
+            None => {
+                return "".to_string();
+            },
+        }
     }
 
     pub fn get_url(&self) -> String {
@@ -230,6 +243,7 @@ impl Request {
             headers: DashMap::new(),
             context: DashMap::new(),
             params: DashMap::new(),
+            cookies: DashMap::new(),
         };
 		// TODO: investagate this line
         let end = request_bytes.iter().position(|&x| x == 0).unwrap_or(request_bytes.len());
@@ -348,13 +362,21 @@ impl Request {
 			}
 			let key = parts[0];
 			let value = parts[1];
+            // ANY HEADER THAT IS NOT A COOKIE
 			if key != "Cookie" {
 				request.headers.insert(key.to_string(), value.to_string());
 				continue
 			}
-			let cookies = value.split(";").collect::<Vec<&str>>();
-			for cookie_string in cookies {
-				println!("cookie_string: {:?}", cookie_string);
+            // COOKIES
+			let cookie_header_split = value.split(";").collect::<Vec<&str>>();
+			for kv_pairs in cookie_header_split {
+				let kv_pairs_split = kv_pairs.split("=").collect::<Vec<&str>>();
+                if kv_pairs_split.len() != 2 {
+                    continue
+                }
+                let key = kv_pairs_split[0];
+                let value = kv_pairs_split[1];
+                request.cookies.insert(key.to_string(), value.to_string());
 			}
 		}
 		return (request, None);

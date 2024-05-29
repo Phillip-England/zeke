@@ -85,13 +85,15 @@ pub fn handle_delete() -> Handler {
 
 pub fn handle_set_cookie() -> Handler {
 	return Handler::new(|request| {
+        let zeke_cookie = request.get_cookie("zeke");
+        println!("zeke cookie: {:?}", zeke_cookie);
 		let response = Response::new()
 			.status(200)
 			.body(&base_template("Set Cookie"))
 			.set_header("Content-Type", "text/html")
 			.set_cookie(
                 Cookie::new("zeke", "likes cookies")
-                    .expires(Duration::days(1))
+                    .expires(OffsetDateTime::now_utc() + Duration::days(1))
                     .domain("")
                     .path("/")
                     .secure(false)

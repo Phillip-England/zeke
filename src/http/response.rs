@@ -160,14 +160,18 @@ impl Response {
 
 	// Set-Cookie: sessionId=abc123; Expires=Wed, 09 Jun 2021 10:18:14 GMT; Max-Age=3600; Domain=example.com; Path=/; Secure; HttpOnly; SameSite=Strict
 	pub fn set_cookie(mut self, cookie: Cookie) -> Self {
-        println!("{:?}", cookie.to_string());
 		let cookies = self.get_header("Set-Cookie");
         if cookies.len() == 0 {
             self.headers.insert("Set-Cookie".to_string(), cookie.to_string());
             return self;
         }
 		let cookies_split = cookies.split(";").collect::<Vec<&str>>();
-        println!("{:?}", cookies_split);
+        for line in cookies_split {
+            // skipping all cookies lines that dont contain the cookie name
+            // if !line.contains(&cookie.name) {
+            //     continue;
+            // }
+        }
 		// for cookie in cookies {
 		// 	if !cookie.contains("=") {
 		// 		continue;

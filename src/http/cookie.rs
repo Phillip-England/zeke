@@ -28,9 +28,7 @@ impl Cookie {
         }
     }
 
-    pub fn expires(mut self, duration: Duration) -> Cookie {
-        let now = OffsetDateTime::now_utc();
-        let expires = now + duration;
+    pub fn expires(mut self, expires: OffsetDateTime) -> Cookie {
         self.expires = Some(expires);
         self
     }
