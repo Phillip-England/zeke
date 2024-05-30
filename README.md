@@ -4,6 +4,15 @@ A set of simple http primitives used to build web services, written in Rust.
 
 ## Quickstart
 
+### Installation
+
+In your `cargo.toml`:
+
+```toml
+[dependencies]
+zeke = '0.1.3'
+```
+
 ### Create a Router
 
 Routers are used to define and serve our http endpoints.
