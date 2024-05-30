@@ -130,25 +130,20 @@ The following middleware will initialize `HttpTrace` prior to calling our handle
 
 ```rs
 pub async fn mw_trace() -> Middleware {
-    Middleware::new(|request: Arc<RwLock<Request>>| {
-        async move {
-            let trace = HttpTrace {
-                time_stamp: chrono::Utc::now().to_rfc3339(),
-            };
-            let trace_encoded = serde_json::to_string(&trace);
-            if trace_encoded.is_err() {
-                return Some(Response::new()
-                    .status(500)
-                    .body("failed to encode trace")
-                );
-            }
-            let trace_encoded = trace_encoded.unwrap();
-            {
-                let mut req = request.write().await;
-                req.set_context(AppContext::Trace, trace_encoded);
-            }
-            None
-        }.boxed() // enables async
+    Middleware::new(|mut request: &mut Request| {
+        let trace = HttpTrace {
+            time_stamp: chrono::Utc::now().to_rfc3339(),
+        };
+        let trace_encoded = serde_json::to_string(&trace);
+        if trace_encoded.is_err() {
+            return Some(Response::new()
+                .status(500)
+                .body("failed to encode trace")
+            );
+        }
+        let trace_encoded = trace_encoded.unwrap();
+        request.set_context(AppContext::Trace, trace_encoded);
+        None
     })
 }
 ```
@@ -177,13 +172,9 @@ if trace_encoded.is_err() {
 
 3. Finally (and most importantly) we call set_context on our `Request` type, using our AppContext::Trace key
 
-Notice how we access the request using `request.write()`
-
 ```rs
-{
-    let mut req = request.write().await;
-    req.set_context(AppContext::Trace, trace_encoded);
-}
+let trace_encoded = trace_encoded.unwrap();
+request.set_context(AppContext::Trace, trace_encoded);
 ```
 
 Now the json data for the `HttpTrace` type is associated with the `Request` type and can be used later in the request cycle.
@@ -216,27 +207,19 @@ We can create an outerware to decode our `HttpTrace` type after the request cycl
 
 ```rs
 pub async fn mw_trace_log() -> Middleware {
-    Middleware::new(|request: Arc<RwLock<Request>>| {
-        async move {
-            let trace = {
-                let req = request.read().await;
-                req.get_context(AppContext::Trace)
-            };
-            if trace.is_empty() {
-                return Some(Response::new()
-                    .status(500)
-                    .body("failed to get trace")
-                );
-            }
-            let trace: HttpTrace = serde_json::from_str(&trace).unwrap();
-            let elapsed_time = trace.get_time_elapsed();
-            {
-                let req = request.read().await;
-                let log_message = format!("[{:?}][{}][{}]", req.method, req.path, elapsed_time);
-                println!("{}", log_message);
-            }
-            None
-        }.boxed() // enables async
+    Middleware::new(|request: &mut Request | {
+        let trace = request.get_context(AppContext::Trace);
+        if trace.is_empty() {
+            return Some(Response::new()
+                .status(500)
+                .body("failed to get trace")
+            );
+        }
+        let trace: HttpTrace = serde_json::from_str(&trace).unwrap();
+        let elapsed_time = trace.get_time_elapsed();
+        let log_message = format!("[{:?}][{}][{}]", request.method, request.path, elapsed_time);
+        println!("{}", log_message);
+        None
     })
 }
 ```
@@ -244,8 +227,6 @@ pub async fn mw_trace_log() -> Middleware {
 Let's take a closer look at a few things.
 
 1. We use our `AppContext::Trace` key to get the encoded `HttpTrace` using `request.get_context`.
-
-Notice how we read the data from the request using `request.read()`:
 
 ```rs
 let trace = {
