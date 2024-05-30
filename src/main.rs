@@ -19,7 +19,7 @@ async fn main() {
 	let mut r = Router::new();
 
     r.add(Route::new("GET /", handle_home())
-        .group(mw_group_trace())
+        .group(mw_group_trace().await)
     );
 
 	let err = r.serve(&host).await;

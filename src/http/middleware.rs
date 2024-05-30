@@ -1,29 +1,27 @@
-
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use futures::future::BoxFuture;
 
 use crate::http::request::Request;
 use crate::http::response::Response;
 
-pub type MiddlewareKey = &'static str;
-
-pub type MiddlewareFunc = dyn Fn(&mut Request) -> Option<Response> + Send + Sync + 'static;
-// pub type Middleware = Arc<Mutex<MiddlewareFunc>>;
+pub type MiddlewareFunc = dyn Fn(Arc<RwLock<Request>>) -> BoxFuture<'static, Option<Response>> + Send + Sync + 'static;
 
 pub struct Middleware {
-    pub func: Arc<RwLock<Box<dyn Fn(&mut Request) -> Option<Response> + Send + Sync + 'static>>>,
+    pub func: Arc<RwLock<Box<MiddlewareFunc>>>,
 }
 
 impl Middleware {
     pub fn new<F>(f: F) -> Middleware
     where
-        F: Fn(&mut Request) -> Option<Response> + Send + Sync + 'static,
+        F: Fn(Arc<RwLock<Request>>) -> BoxFuture<'static, Option<Response>> + Send + Sync + 'static,
     {
         Middleware {
             func: Arc::new(RwLock::new(Box::new(f))),
         }
     }
 }
+
 
 pub type Middlewares = Vec<Middleware>;
 
@@ -34,15 +32,9 @@ pub struct MiddlewareGroup {
 
 impl MiddlewareGroup {
     pub fn new(middlewares: Middlewares, outerwares: Middlewares) -> MiddlewareGroup {
-        return MiddlewareGroup {
-            middlewares: middlewares,
-            outerwares: outerwares,
-        };
+        MiddlewareGroup {
+            middlewares,
+            outerwares,
+        }
     }
 }
-
-
-
-
-
-

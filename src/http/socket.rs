@@ -1,6 +1,7 @@
 use std::time::Duration;
 use std::sync::{Arc, PoisonError};
 
+use tokio::sync::RwLock;
 use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::{TcpListener, TcpStream}, time::timeout, sync::MutexGuard};
 
 use crate::http::router::Router;
@@ -92,9 +93,10 @@ pub async fn handle_middleware(mut request: Request, middlewares: &Middlewares) 
     if middlewares.len() == 0 {
         return (request, None);
     };
+    let request_arc = Arc::new(RwLock::new(request.clone()));
     for middleware in middlewares {
         let middleware = middleware.func.read().await;
-        let potential_response = middleware(&mut request);
+        let potential_response = middleware(Arc::clone(&request_arc)).await;
 		if potential_response.is_none() {
 			continue;
 		}

@@ -1,48 +1,67 @@
 
+use std::sync::Arc;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use futures::future::BoxFuture;
+use futures::FutureExt;
+use tokio::sync::RwLock;
 
+use crate::http::request::Request;
 use crate::MiddlewareGroup;
 use crate::{http::middleware::Middleware, Response};
 use crate::examples::context::AppContext;
 
-pub fn mw_trace() -> Middleware {
-    return Middleware::new(|request| {
-        let trace = HttpTrace{
-            time_stamp: chrono::Utc::now().to_rfc3339(),
-        };
-        let trace_encoded = serde_json::to_string(&trace);
-        if trace_encoded.is_err() {
-            return Some(Response::new()
-                .status(500)
-                .body("failed to encode trace")
-            );
-        }
-        let trace_encoded = trace_encoded.unwrap();
-        request.set_context(AppContext::Trace, trace_encoded);
-        return None;
-    });
+pub async fn mw_trace() -> Middleware {
+    Middleware::new(|request: Arc<RwLock<Request>>| {
+        async move {
+            let trace = HttpTrace {
+                time_stamp: chrono::Utc::now().to_rfc3339(),
+            };
+            let trace_encoded = serde_json::to_string(&trace);
+            if trace_encoded.is_err() {
+                return Some(Response::new()
+                    .status(500)
+                    .body("failed to encode trace")
+                );
+            }
+            let trace_encoded = trace_encoded.unwrap();
+            {
+                let mut req = request.write().await;
+                req.set_context(AppContext::Trace, trace_encoded);
+            }
+            None
+        }.boxed()
+    })
 }
 
-pub fn mw_trace_log() -> Middleware {
-    return Middleware::new(|request| {
-        let trace = request.get_context(AppContext::Trace);
-        if trace == "" {
-            return Some(Response::new()
-                .status(500)
-                .body("failed to get trace")
-            );
-        }
-        let trace: HttpTrace = serde_json::from_str(&trace).unwrap();
-        let elapsed_time = trace.get_time_elapsed();
-        let log_message = format!("[{:?}][{}][{}]", request.method, request.path, elapsed_time);
-        println!("{}", log_message);
-        return None;
-    });
+pub async fn mw_trace_log() -> Middleware {
+    Middleware::new(|request: Arc<RwLock<Request>>| {
+        async move {
+            let trace = {
+                let req = request.read().await;
+                req.get_context(AppContext::Trace)
+            };
+            if trace.is_empty() {
+                return Some(Response::new()
+                    .status(500)
+                    .body("failed to get trace")
+                );
+            }
+            let trace: HttpTrace = serde_json::from_str(&trace).unwrap();
+            let elapsed_time = trace.get_time_elapsed();
+            {
+                let req = request.read().await;
+                let log_message = format!("[{:?}][{}][{}]", req.method, req.path, elapsed_time);
+                println!("{}", log_message);
+            }
+            None
+        }.boxed()
+    })
 }
 
-pub fn mw_group_trace() -> MiddlewareGroup {
-    return MiddlewareGroup::new(vec![mw_trace()], vec![mw_trace_log()]);
+pub async fn mw_group_trace() -> MiddlewareGroup {
+    MiddlewareGroup::new(vec![mw_trace().await], vec![mw_trace_log().await])
 }
 
 #[derive(Debug, Serialize, Deserialize)]
