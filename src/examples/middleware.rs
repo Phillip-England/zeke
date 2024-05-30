@@ -12,18 +12,15 @@ pub fn mw_trace() -> Middleware {
             time_stamp: chrono::Utc::now().to_rfc3339(),
         };
         let trace_encoded = serde_json::to_string(&trace);
-        match trace_encoded {
-            Ok(trace_encoded) => {
-                request.set_context(AppContext::Trace, trace_encoded);
-                return None;
-            },
-            Err(_) => {
-                return Some(Response::new()
-                    .status(500)
-                    .body("failed to encode trace")
-                );
-            }
+        if trace_encoded.is_err() {
+            return Some(Response::new()
+                .status(500)
+                .body("failed to encode trace")
+            );
         }
+        let trace_encoded = trace_encoded.unwrap();
+        request.set_context(AppContext::Trace, trace_encoded);
+        return None;
     });
 }
 

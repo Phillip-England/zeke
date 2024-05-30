@@ -1,303 +1,82 @@
 # Zeke
 
-## Simple HTTP Library
-Zeke is a HTTP library built on top of Tokio. Zeke values *simplicitiy and minimalism*.
-
-## Installation
-In `cargo.toml`:
-
-```toml
-[dependencies]
-zeke = "0.1.2"
-```
+A set of simple http primitives used to build web services, written in Rust.
 
 ## Quickstart
-This quickstart will show you how to:
-1. Create a Router
-2. Add New Routes
-3. Create Middleware
-4. Apply Middleware to Routes
-5. Share Context Between Middlware and Handlers
+
+### Create a Router
+
+Routers are used to define and serve our http endpoints.
 
 ```rs
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
-
-use zeke::http::{
-    context::{get_context, set_context, Contextable}, 
-    handler::Handler, 
-    middleware::{Middleware, MiddlewareGroup}, 
-    response::{new_response, set_header}, 
-    router::{Route, Router},
-};
-
-
 #[tokio::main]
 async fn main() {
+	let r = Router::new();
+}
+```
 
+### Create a Handler
 
-    //================================================================
-    // creating a router
-    //================================================================
+Any function that returns a Handler can be associated with an endpoint:
 
-	let mut r = Router::new();
-
-    //================================================================
-    // creating a handler
-    //================================================================
-
-    pub fn handle_home() -> Handler {
-        return Handler::new(|request| {
-            let response = new_response(200, "<h1>Home</h1><a href='/about'>About</a>");
-            let response = set_header(response, "Content-Type", "text/html");
-            return (request, response);
-        });
-    }
-
-    pub fn handle_about() -> Handler {
-        return Handler::new(|request| {
-            let response = new_response(200, "<h1>About</h1><a href='/'>Home</a>");
-            let response = set_header(response, "Content-Type", "text/html");
-            return (request, response);
-        });
-    }
-
-    //================================================================
-    // creating a type to represent shared state
-    //================================================================
-
-    pub enum AppContext {
-        Trace,
-    }
-
-    impl Contextable for AppContext {
-        fn key(&self) -> &'static str {
-            match self {
-                AppContext::Trace => {"TRACE"},
-            }
-        }
-    }
-
-    //================================================================
-    // creating a middleware to track when our request starts
-    //================================================================
-
-    pub fn mw_trace() -> Middleware {
-        return Middleware::new(|request| {
-            let trace = HttpTrace{
-                time_stamp: chrono::Utc::now().to_rfc3339(),
-            };
-            let trace_encoded = serde_json::to_string(&trace);
-            match trace_encoded {
-                Ok(trace_encoded) => {
-                    set_context(request, AppContext::Trace, trace_encoded);
-                    return None;
-                },
-                Err(_) => {
-                    return Some(new_response(500, "failed to encode trace"));
-                }
-            }
-        });
-    }
-
-    //================================================================
-    // creating a middleware to log our request processing time
-    //================================================================
-
-    pub fn mw_trace_log() -> Middleware {
-        return Middleware::new(|request| {
-            let trace = get_context(&request.context, AppContext::Trace);
-            if trace == "" {
-                return Some(new_response(500, "trace not found"));
-            }
-            let trace: HttpTrace = serde_json::from_str(&trace).unwrap();
-            let elapsed_time = trace.get_time_elapsed();
-            let log_message = format!("[{}][{}][{}]", request.method, request.path, elapsed_time);
-            println!("{}", log_message);
-            return None;
-        });
-    }
-
-    //================================================================
-    // grouping middleware for reusability
-    //================================================================
-
-    pub fn mw_group_trace() -> MiddlewareGroup {
-        return MiddlewareGroup::new(vec![mw_trace()], vec![mw_trace_log()]);
-    }
-
-    //================================================================
-    // creating a type to track our request processing time
-    //================================================================
-
-    #[derive(Debug, Serialize, Deserialize)]
-    pub struct HttpTrace {
-        pub time_stamp: String,
-    }
-
-    impl HttpTrace {
-        /// Prints the time elapsed since the `time_stamp` was set.
-        pub fn get_time_elapsed(&self) -> String {
-            if let Ok(time_set) = DateTime::parse_from_rfc3339(&self.time_stamp) {
-                let time_set = time_set.with_timezone(&Utc);
-                let now = Utc::now();
-                let duration = now.signed_duration_since(time_set);
-                let micros = duration.num_microseconds();
-                match micros {
-                    Some(micros) => {
-                        if micros < 1000 {
-                            return format!("{}µ", micros);
-                        }
-                    },
-                    None => {
-
-                    }
-                }
-                let millis = duration.num_milliseconds();
-                return format!("{}ms", millis);
-            } else {
-                return "failed to parse time_stamp".to_string();
-            }
-        }
-    }
-
-    //================================================================
-    // mounting handlers with middleware/outerware
-    //================================================================
-
-    // mount a handler with middleware/outerware
-    r.add(Route::new("GET /", handle_home())
-        .middleware(mw_trace())
-        .outerware(mw_trace_log())
-    );
-
-    // mount a handler with a middleware group
-    r.add(Route::new("GET /about", handle_about())
-        .group(mw_group_trace())
-    );
-
-    //================================================================
-    // starting the server
-    //================================================================
-
-    let err = r.serve("127.0.0.1:8080").await;
-    match err {
-        Some(e) => {
-            println!("Error: {:?}", e);
-        },
-        None => {
-            println!("Server closed");
-        },
-    }
-
+```rs
+#[tokio::main]
+async fn main() {
+	let r = Router::new();
+    r.add(Route::new("GET /", hello_world()));
 }
 
-```
-
-## Features
-
-### Router
-Initialize a server by creating a Router:
-
-```rs
-let mut r: Router = Router::new();
-```
-
-### Handlers
-Handlers are functions that return a Handler:
-
-```rs
-pub fn handle_home() -> Handler {
+async fn hello_world() -> Handler {
     return Handler::new(|request| {
-        let response = new_response(200, "<h1>Home</h1>");
-        let response = set_header(response, "Content-Type", "text/html");
+        let response = Response::new()
+            .status(200);
         return (request, response);
     });
 }
 ```
 
-### Routes
-Routes are added to the Router:
+### Serving
+
+To serve the application, called `Router.serve`:
 
 ```rs
-r.add(Route::new("GET /", handle_home()))
-```
-
-### Middleware
-Middleware is any function that returns a Middleware:
-
-```rs
-pub fn mw_print_name() -> Middleware {
-    return Middleware::new(|request| {
-        let name = "Zeke";
-        println!("My name is {}", name);
-        return None;
-    })
-}
-
-pub fn mw_print_color() -> Middleware {
-    return Middleware::new(|request| {
-        let name = "red";
-        println!("My favorite color is {}", name);
-        return None;
-    })
+#[tokio::main]
+async fn main() {
+    // --snip
+	let result = r.serve(&host).await;
+	if result.is_err() {
+		println!("Error: {:?}", err);
+	}
 }
 ```
 
-Middleware can be chained:
-```rs
-r.add(Route::new("GET /name-and-color", handle_hello_world())
-    .middleware(mw_print_name(), mw_print_color())
-);
-```
+### Context Keys
 
-Middleware can be grouped:
+Any data shared between middleware, handlers, and outerware is referred to as `context`.
+
+Keys are required to encode and decode context. An enum which implements the `Contextable` trait can be used to keep track of these keys:
+
 ```rs
-pub fn mw_group_name_and_color() -> MiddlewareGroup {
-    return MiddlewareGroup::new(vec![mw_print_name()], vec![mw_print_color()]);
+pub enum AppContext {
+    Trace,
 }
 
-r.add(Route::new("GET /name-and-color-group", handle_hello_world())
-    .group(mw_group_name_and_color())
-);
-```
-
-If a Middlware returns a Response, the request cycle will end and the Response will be returned:
-```rs
-pub fn mw_stop_execution() -> Middleware {
-    return Middleware::new(|request| {
-        println!("response returned, stopping execution...");
-        return Some(new_response(500, "stopping execution!"));
-    })
+impl Contextable for AppContext {
+    fn key(&self) -> &'static str {
+        match self {
+            AppContext::Trace => {"TRACE"},
+        }
+    }
 }
-
-r.add(Route::new("GET /stop", handle_hello_world())
-    .middleware(mw_print_name(), mw_print_color())
-);
 ```
 
-### Outerware
-Outerware are Middleware to be ran *after* processing a request:
+### HttpTrace
+
+HttpTrace is a `context` (because it is intended to be shared between middleware, handlers, and outware) that helps us keep track of how long each request cycle takes.
+
+You must derive `Serialize` and `Deserialize` for any data intended to be used as `context`.
 
 ```rs
-r.add(Route::new("GET /name-then-color", handle_hello_world())
-    .middleware(mw_print_name())
-    .outerware(mw_print_color()) // accepts any Middleware
-);
-```
-
-### Shared State
-
-#### Define a Shared Type
-Start by defining a type we intend to share between middleware, handlers, and outerware. Here, we define `HttpTrace` which will be used to log out request details after a request is processed.
-
-NOTE: Any type we intend to share must derive `Serialize` and `Deserialize` from [serde](https://docs.rs/serde/latest/serde/index.html). I am using `version serde = { version = "1.0.200", features = ["derive"] }` in my `cargo.toml`.
-
-```rs
-use serde::{Deserialize, Serialize};
-
-// -- snip
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HttpTrace {
     pub time_stamp: String,
@@ -329,32 +108,13 @@ impl HttpTrace {
 }
 ```
 
-#### Define Your Context Keys
-Context keys are used to encode and decode our shared types between each part of the request/response cycle.
+### Middleware
 
-Start by defining an enum containing our context keys:
+Any function that returns a `Middleware` can be used as middleware in our application.
 
-```rs
-pub enum AppContext {
-    // define your keys here
-    Trace
-}
-```
+Let's make use of the `HttpTrace` type we created in the previous section.
 
-Implement the `Contextable` trait on our `AppContext` and list our keys:
-```rs
-impl Contextable for AppContext {
-    fn key(&self) -> &'static str {
-        match self {
-            // list your keys here
-            AppContext::Trace => {"TRACE"},
-        }
-    }
-}
-```
-
-#### Encoding a Shared Type
-Using `AppContext`, we can encode our shared types. Here we create a middleware which uses our `HttpTrace` type to track when we start processing our request:
+The following middleware will initialize `HttpTrace` prior to calling our handler:
 
 ```rs
 pub fn mw_trace() -> Middleware {
@@ -365,37 +125,170 @@ pub fn mw_trace() -> Middleware {
         let trace_encoded = serde_json::to_string(&trace);
         match trace_encoded {
             Ok(trace_encoded) => {
-                // using our key to encode the HttpTrace
-                set_context(request, AppContext::Trace, trace_encoded);
+                request.set_context(AppContext::Trace, trace_encoded);
                 return None;
             },
             Err(_) => {
-                return Some(new_response(500, "failed to encode trace"));
+                return Some(Response::new()
+                    .status(500)
+                    .body("failed to encode trace")
+                );
             }
         }
     });
 }
 ```
 
-#### Decoding a Shared Type
-Using `AppContext`, we can decode our shared types. Here, we create a middleware which will decode our `HttpTrace` and log out all the request details, including how long it took the request to process:
+Let's take a moment to notice a few key things going on here.
+
+1. We initalize our trace type and then encode it into json:
+
+```rs
+let trace = HttpTrace{
+    time_stamp: chrono::Utc::now().to_rfc3339(),
+};
+let trace_encoded = serde_json::to_string(&trace);
+```
+
+2. We ensure the trace has been encoded correctly:
+
+```rs
+if trace_encoded.is_err() {
+    return Some(Response::new()
+        .status(500)
+        .body("failed to encode trace")
+    );
+}
+```
+
+3. Finally (and most importantly) we call set_context on our `Request` type, using our AppContext::Trace key:
+
+```rs
+request.set_context(AppContext::Trace, trace_encoded);
+```
+
+Now the json data for the `HttpTrace` type is associated with the `Request` type and can be used later in the request cycle.
+
+We can attach our middleware to a `Route` like so:
+
+```rs
+#[tokio::main]
+async fn main() {
+	let r = Router::new();
+    r.add(Route::new("GET /", hello_world())
+        .middleware(mw_trace())
+    );
+    let result = r.serve(&host).await;
+	if result.is_err() {
+		println!("Error: {:?}", err);
+	}
+}
+```
+
+### Outerware
+
+Any function that returns a `Middleware` can be used as outerware in our application. 
+
+Middleware is ran *before* the handler is called.
+
+Outerware is ran *after* the handler is called.
+
+We can create an outerware to decode our `HttpTrace` type after the request cycle is over. We can then calculate how much time it took the entire request to process and print it to the terminal.
 
 ```rs
 pub fn mw_trace_log() -> Middleware {
     return Middleware::new(|request| {
-        let trace = get_context(&request.context, AppContext::Trace);
+        let trace = request.get_context(AppContext::Trace);
         if trace == "" {
-            return Some(new_response(500, "trace not found"));
+            return Some(Response::new()
+                .status(500)
+                .body("failed to get trace")
+            );
         }
-        // decode our type here
         let trace: HttpTrace = serde_json::from_str(&trace).unwrap();
         let elapsed_time = trace.get_time_elapsed();
-        let log_message = format!("[{}][{}][{}]", request.method, request.path, elapsed_time);
+        let log_message = format!("[{:?}][{}][{}]", request.method, request.path, elapsed_time);
         println!("{}", log_message);
         return None;
     });
 }
 ```
 
+Let's take a closer look at a few things.
 
+1. We use our `AppContext::Trace` key to get the encoded `HttpTrace` using `request.get_context`:
+
+```rs
+let trace = request.get_context(AppContext::Trace);
+```
+
+2. We ensure the trace exists:
+
+```rs
+if trace == "" {
+    return Some(Response::new()
+        .status(500)
+        .body("failed to get trace")
+    );
+}
+```
+
+3. We decode the `HttpTrace`:
+
+```rs
+let trace: HttpTrace = serde_json::from_str(&trace).unwrap();
+```
+
+4. Finally, we calculate the elapsed time and log results to the terminal:
+
+```rs
+let elapsed_time = trace.get_time_elapsed();
+let log_message = format!("[{:?}][{}][{}]", request.method, request.path, elapsed_time);
+println!("{}", log_message);
+```
+
+We can use this outerware in our application like so:
+
+```rs
+#[tokio::main]
+async fn main() {
+	let r = Router::new();
+    r.add(Route::new("GET /", hello_world())
+        .middleware(mw_trace())
+        .outerware(mw_trace_log())
+    );
+    let result = r.serve(&host).await;
+	if result.is_err() {
+		println!("Error: {:?}", err);
+	}
+}
+```
+
+### Middleware Groups
+
+Any function that returns a `MiddlewareGroup` can be used as a middleware group in our application.
+
+Middleware groups enable us to group middleware together. Let's see if we can group our `mw_trace` and `mw_trace_log` functions together:
+
+```rs
+pub fn mw_group_trace() -> MiddlewareGroup {
+    return MiddlewareGroup::new(vec![mw_trace()], vec![mw_trace_log()]);
+}
+```
+
+Now we can simply use the group:
+
+```rs
+#[tokio::main]
+async fn main() {
+	let r = Router::new();
+    r.add(Route::new("GET /", hello_world())
+        .group(mw_group_trace())
+    );
+    let result = r.serve(&host).await;
+	if result.is_err() {
+		println!("Error: {:?}", err);
+	}
+}
+```
 
