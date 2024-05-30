@@ -229,10 +229,7 @@ Let's take a closer look at a few things.
 1. We use our `AppContext::Trace` key to get the encoded `HttpTrace` using `request.get_context`.
 
 ```rs
-let trace = {
-    let req = request.read().await;
-    req.get_context(AppContext::Trace)
-};
+let trace = request.get_context(AppContext::Trace);
 ```
 
 2. We ensure the trace exists:
