@@ -73,7 +73,7 @@ pub async fn handle_request(router: Arc<Router>, request: Request) -> Response {
 		},
 		None => {
 			let handler = handler.func.read().await;
-			let (request, handler_response) = handler(request);
+			let (request, handler_response) = handler(request).await;
 			// TODO: clean all the white space up out of the handler_response?
 			let (_, potential_response) = handle_middleware(request, outerwares).await;
 			match potential_response {
