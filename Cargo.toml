@@ -7,14 +7,7 @@ description = "a http library for rust built on top of tokio"
 license = "MIT"
 
 [dependencies]
-tokio = { version = "1.37.0", features = ["full"] }
-serde = { version = "1.0.200", features = ["derive"] }
-bincode = { version = "1.3.3" }
-serde_json = { version = "1.0" }
-chrono = "0.4"
-dashmap = "5.5.3"
-reqwest = "0.12.4"
-dotenv = "0.15"
-rand = "0.8.5"
-time = { version = "0.3", features = ["formatting", "macros"] }
-futures = "0.3.30"
+hyper = { version = "1", features = ["full"] }
+tokio = { version = "1", features = ["full"] }
+http-body-util = "0.1"
+hyper-util = { version = "0.1", features = ["full"] }
