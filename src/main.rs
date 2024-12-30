@@ -10,58 +10,9 @@ use hyper::{Method, StatusCode};
 use hyper::{Request, Response};
 use hyper_util::rt::TokioIo;
 use tokio::net::TcpListener;
+use zeke::Router;
 
-#[derive(Debug)]
-struct Router<'a> {
-    routes: std::collections::HashMap<String, Route<'a>>,
-}
 
-impl<'a> Router<'a> {
-    pub fn new() -> Self {
-        Self {
-            routes: std::collections::HashMap::new(),
-        }
-    }
-
-    pub fn add<F>(&mut self, method: &'a str, path: &'a str, handler: F)
-    where
-        F: Fn(Request<hyper::body::Incoming>) + 'a + 'static,
-    {
-        let boxed_handler: Handler = Box::new(handler);
-        let route = Route {
-            path,
-            method,
-            handler: boxed_handler,
-        };
-        self.routes.insert(path.to_string(), route);
-    }
-}
-
-struct Route<'a> {
-    path: &'a str,
-    method: &'a str,
-    handler: Handler,
-}
-
-impl<'a> std::fmt::Debug for Route<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Route")
-            .field("path", &self.path)
-            .field("method", &self.method)
-            .field("handler", &DebuggableHandler)
-            .finish()
-    }
-}
-
-type Handler = Box<dyn Fn(Request<hyper::body::Incoming>)>;
-
-struct DebuggableHandler;
-
-impl std::fmt::Debug for DebuggableHandler {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "<handler>")
-    }
-}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
