@@ -18,7 +18,7 @@ impl<'a> Router<'a> {
 
     pub fn add<F>(&mut self, method: &'a str, path: &'a str, handler: F)
     where
-        F: Fn(Request<hyper::body::Incoming>) + 'a + 'static,
+        F: Fn(Request<hyper::body::Incoming>) + 'a + 'static + Send + Sync,
     {
         let boxed_handler: Handler = Box::new(handler);
         let route = Route {

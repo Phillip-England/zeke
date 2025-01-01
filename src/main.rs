@@ -12,6 +12,8 @@ use hyper_util::rt::TokioIo;
 use tokio::net::TcpListener;
 use zeke::Router;
 
+use std::sync::Arc;
+
 
 
 #[tokio::main]
@@ -22,17 +24,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     // routes
     let mut router = Router::new();
-
     router.add("GET", "/", |req: Request<hyper::body::Incoming>| {});
 
-    println!("{:?}", router);
+    let shared_router = Arc::new(router);
+
+    // println!("{:?}", shared_router);
 
     loop {
         let (stream, _) = listener.accept().await?;
         let io = TokioIo::new(stream);
+        let shared_router = Arc::clone(&shared_router);
         tokio::task::spawn(async move {
             if let Err(err) = http1::Builder::new()
-                .serve_connection(io, service_fn(catch_all))
+                .serve_connection(io, service_fn(|req: Request<hyper::body::Incoming>| {
+                    println!("{:?}", shared_router);
+                    catch_all(req)
+                }))
                 .await
             {
                 eprintln!("Error serving connection: {:?}", err);

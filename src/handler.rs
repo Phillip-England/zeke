@@ -1,6 +1,6 @@
 use hyper::{Request};
 
-pub type Handler = Box<dyn Fn(Request<hyper::body::Incoming>)>;
+pub type Handler = Box<dyn Fn(Request<hyper::body::Incoming>) + Send + Sync>;
 
 pub struct DebuggableHandler;
 
